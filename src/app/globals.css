@@ -246,10 +246,18 @@ h1, h2, h3, h4, .font-heading { font-family: var(--font-cairo), var(--font-tajaw
 .bmc-costs { grid-column: 1 / 6; grid-row: 3; }
 .bmc-revenue { grid-column: 6 / 11; grid-row: 3; }
 
+/* phones/tablets: the 10-column canvas collapses into a readable single column */
+@media (max-width: 700px) {
+  .bmc-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+  .bmc-grid > .bmc-cell { grid-column: auto !important; grid-row: auto !important; }
+}
+
 /* ─── Report / print ─────────────────────────────────────────────────────── */
 .report-page { background: #fff; color: #22313A; }
 .report-cover { min-height: 92vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; }
 .report-section { break-before: page; }
+/* horizontal scroll wrapper for wide financial tables on phones (print = visible) */
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 @media print {
   @page { size: A4; margin: 16mm 13mm 18mm; }
   html, body { background: #fff !important; color: #1E2B33 !important; font-size: 12.2px; }
@@ -257,25 +265,53 @@ h1, h2, h3, h4, .font-heading { font-family: var(--font-cairo), var(--font-tajaw
   .print-only { display: block !important; }
   .report-shell { padding: 0 !important; margin: 0 !important; max-width: none !important; box-shadow: none !important; }
   .report-section { break-before: page; padding-top: 0; }
+  .report-cover { min-height: 0; height: auto; justify-content: flex-start; padding-top: 2mm; }
+  .tbl-wrap { overflow: visible; }
   .rep-footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #C9D6DE; font-size: 9.5px; color: #5E7180; display: flex !important; justify-content: space-between; padding-top: 3px; }
   .rep-header { position: fixed; top: -14mm; left: 0; right: 0; display: flex !important; justify-content: space-between; align-items: center; font-size: 9.5px; color: #5E7180; border-bottom: 1px solid #C9D6DE; padding-bottom: 3px; }
   .fin-table { font-size: 10.2px; }
   .fin-table th { background: #EBF1F4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .fin-table .total-row td, .fin-table .subtotal-row td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   thead { display: table-header-group; }
-  tr, .bmc-cell, .alert-calm, .kp-card { break-inside: avoid; }
-  .bmc-cell { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  tr, .bmc-cell, .alert-calm, .kp-card, .doc-card { break-inside: avoid; }
+  .bmc-cell, .cover-band { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .cover-block { break-after: page; }
   a { text-decoration: none; color: inherit; }
 }
 
 /* ─── Deck (16:9 slides) ─────────────────────────────────────────────────── */
 .deck-slide { width: 297mm; height: 166mm; position: relative; overflow: hidden; background: #fff; color: #22313A; }
+
+/* Adaptive slide frame: the slide keeps its print-exact 297×166mm geometry and
+   is scaled to fit ANY screen width (phone, tablet, laptop) via --deck-scale.
+   The frame reserves the scaled layout size so no horizontal scroll appears. */
+.deck-frame {
+  position: relative;
+  width: calc(297mm * var(--deck-scale, 1));
+  height: calc(166mm * var(--deck-scale, 1));
+  margin-inline: auto;
+}
+.deck-frame > .deck-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(var(--deck-scale, 1));
+  transform-origin: top left;
+}
+[dir="rtl"] .deck-frame > .deck-slide { left: auto; right: 0; transform-origin: top right; }
+
+/* full-width line charts inside slides: fixed box so the slide never overflows */
+.deck-chart { width: 158mm; max-width: 100%; margin-inline: auto; }
+
 @media print {
   @page { size: 297mm 166mm; margin: 0; }
   body.deck-mode .rep-footer, body.deck-mode .rep-header { display: none !important; }
   .deck-slide { break-after: page; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body.deck-mode .deck-slide { width: 100%; height: 100vh; }
+  /* exact page geometry (100vh rounds up in Chrome and spills a blank page) */
+  body.deck-mode .deck-slide { width: 297mm; height: calc(166mm - 1px); }
+  .deck-frame { width: auto !important; height: auto !important; break-after: page; }
+  .deck-frame:last-child { break-after: auto; }
+  .deck-frame > .deck-slide { position: static !important; transform: none !important; break-after: auto; }
 }
 
 /* ─── Landing page identity ──────────────────────────────────────────────── */

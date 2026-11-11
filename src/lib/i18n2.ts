@@ -41,7 +41,7 @@ const ar = {
   fc4b: ['تلميح وأمثلة جيدة/سيئة لكل خانة من الخانات التسع', 'تحليل SWOT كامل + بطاقة المنافسين وحوافهم التنافسية', 'شخصيات العملاء Persona مربوطة بفرضيات الكميات المبيعة'],
   fc5t: 'تقرير احترافي وعرض تقديمي',
   fc5d: 'جاهزان للجنة في نقرة واحدة',
-  fc5b: ['تقرير PDF بغلاف وفهرس وأقسام مرقمة بهوية الحاضنة', 'تصدير انتقائي: كامل / الملاحق المالية فقط / BMC / صفحة واحدة', 'عرض تقديمي تلقائي 14 شريحة: PDF أو PPTX من بياناتك'],
+  fc5b: ['تقرير PDF بغلاف وفهرس وأقسام مرقمة بهوية الحاضنة', 'تصدير انتقائي: كامل / الملاحق المالية فقط / BMC / صفحة واحدة', 'عرض تقديمي تلقائي 15 شريحة: PDF أو PPTX من بياناتك'],
   fc6t: 'ثلاث لغات ومشروع تجريبي',
   fc6d: 'ابدأ خلال دقيقتين',
   fc6b: ['عربية، فرنسية، إنجليزية — تبديل فوري من أي صفحة', 'مشروع تجريبي كامل ببيانات جزائرية واقعية', 'جولة تعريفية عند أول استخدام'],
@@ -104,6 +104,11 @@ const ar = {
   dContact: 'للتواصل',
   dMd: 'مليون دج',
   dBmcHint: 'النموذج الكامل موثق في التقرير المرفق',
+  dDocLabel: 'الإطار المرجعي',
+  dToolCredits: 'تمّت الدراسة بواسطة أداة BMC — من تصميم وتطوير يحي مسعود',
+  dMethod: 'المنهجية والمعادلات المعتمدة',
+  dMethodT: 'الإطار المرجعي للحسابات المالية',
+  dMethodIntro: 'التعريفات والمعادلات أدناه ثابتة في كل المشاريع وتتوافق مع النظام المحاسبي المالي (SCF) والأنظمة الجبائية الجزائرية؛ تتغير من مشروع لآخر البيانات والنتائج والمنحنيات فقط.',
 };
 
 export type XDict = typeof ar;
@@ -145,7 +150,7 @@ const fr: XDict = {
   fc4b: ['Aide et bons/mauvais exemples pour chacune des 9 cases', 'Analyse SWOT complète + fiche concurrents et avantages', 'Personas liés aux hypothèses de quantités vendues'],
   fc5t: 'Rapport pro & pitch deck',
   fc5d: 'Prêts pour le comité en un clic',
-  fc5b: ['Rapport PDF avec couverture, sommaire et sections numérotées', 'Export sélectif : complet / financier / BMC / une page', 'Pitch deck automatique de 14 slides : PDF ou PPTX'],
+  fc5b: ['Rapport PDF avec couverture, sommaire et sections numérotées', 'Export sélectif : complet / financier / BMC / une page', 'Pitch deck automatique de 15 slides : PDF ou PPTX'],
   fc6t: 'Trois langues + projet démo',
   fc6d: 'Démarrez en deux minutes',
   fc6b: ['Arabe, français, anglais — bascule instantanée partout', 'Projet démo complet avec données réalistes', 'Visite guidée à la première utilisation'],
@@ -205,6 +210,11 @@ const fr: XDict = {
   dContact: 'Contact',
   dMd: 'M DA',
   dBmcHint: 'Le modèle complet est détaillé dans le rapport joint',
+  dDocLabel: 'Cadre de référence',
+  dToolCredits: 'Étude réalisée à l’aide de l’outil BMC — conçu et développé par Yahya Messaoud',
+  dMethod: 'Méthodologie & formules',
+  dMethodT: 'Cadre de référence des calculs financiers',
+  dMethodIntro: 'Les définitions et formules ci-dessous sont identiques dans tous les projets, conformément au SCF et à la fiscalité algérienne ; seuls les données, résultats et graphiques changent d’un projet à l’autre.',
 };
 
 const en: XDict = {
@@ -244,7 +254,7 @@ const en: XDict = {
   fc4b: ['Hints and good/bad examples for each of the 9 blocks', 'Full SWOT analysis + competitor cards and edges', 'Personas linked to your sales quantity assumptions'],
   fc5t: 'Professional report & pitch deck',
   fc5d: 'Committee-ready in one click',
-  fc5b: ['PDF report with cover, TOC and numbered sections', 'Selective export: full / financial only / BMC / one page', 'Automatic 14-slide deck: PDF or PPTX from your data'],
+  fc5b: ['PDF report with cover, TOC and numbered sections', 'Selective export: full / financial only / BMC / one page', 'Automatic 15-slide deck: PDF or PPTX from your data'],
   fc6t: 'Three languages + demo project',
   fc6d: 'Start within two minutes',
   fc6b: ['Arabic, French, English — instant switch anywhere', 'Complete demo project with realistic data', 'Guided tour on first use'],
@@ -304,6 +314,11 @@ const en: XDict = {
   dContact: 'Contact',
   dMd: 'M DZD',
   dBmcHint: 'The full model is documented in the attached report',
+  dDocLabel: 'Reference',
+  dToolCredits: 'Study produced with the BMC tool — designed and developed by Yahya Messaoud',
+  dMethod: 'Methodology & formulas',
+  dMethodT: 'The reference frame for the financial calculations',
+  dMethodIntro: 'The definitions and formulas below are identical in every project, in line with the Algerian SCF accounting system and tax rules; only the data, results and charts change from one project to another.',
 };
 
 export const XDICTS: Record<Lang, XDict> = { ar, fr, en };

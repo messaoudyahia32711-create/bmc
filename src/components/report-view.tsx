@@ -12,16 +12,25 @@ import { countPdf } from '@/lib/stats';
 import {
   AppendixBreakEven, AppendixScenario, AppendixDetailedRevenue, AppendixAssets,
   AppendixFinancing, AppendixLoan, AppendixCashflow, AppendixCashGap, AppendixTax,
-  AppendixSCF, AppendixBMC, AppendixBMCFinance,
+  AppendixSCF, AppendixBMC, AppendixBMCFinance, DocCard,
 } from './appendices';
+import { DocKey } from '@/lib/annex-docs';
+import { getX } from '@/lib/i18n2';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 type ExportMode = 'full' | 'fin' | 'bmc' | 'one';
 
+/** All static reference docs — definitions & formulas identical in every project. */
+const METHOD_KEYS: DocKey[] = [
+  'unitEconomics', 'breakEven', 'scenarios', 'detailedRevenue', 'assets', 'financing',
+  'loan', 'cashflow', 'cashGap', 'tax', 'scf', 'bmc', 'bmcFinance', 'indicators',
+];
+
 export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
   const { t, lang, branding } = useApp();
+  const x = getX(lang);
   const [mode, setMode] = useState<ExportMode>('full');
   const money = (n: number) => fmtMoney(n, lang);
   const snap = useMemo(() => computeSnapshot(p), [p]);
@@ -48,10 +57,10 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
           <Button size="sm" variant="ghost" className="gap-1" onClick={onBack}>
             {lang === 'ar' ? <ArrowLeft className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" style={{ transform: 'scaleX(-1)' }} />}{t.backToApp}
           </Button>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[12.5px] text-muted-foreground">{t.exportMode}:</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="hidden text-[12.5px] text-muted-foreground sm:inline">{t.exportMode}:</span>
             <Select value={mode} onValueChange={v => setMode(v as ExportMode)}>
-              <SelectTrigger className="h-8 w-56 text-[13px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full min-w-0 text-[13px] sm:w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="full">{t.expFull}</SelectItem>
                 <SelectItem value="fin">{t.expFin}</SelectItem>
@@ -71,6 +80,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
           <span>{projectName}</span>
         </div>
         <div className="rep-footer hidden" aria-hidden>
+          <span>{t.toolCredits}</span>
           <span>{branding.footerNote || t.privacyLines[2]}</span>
           <span>{t.reportGenerated}: {fmtDate(Date.now(), lang)}</span>
         </div>
@@ -78,10 +88,16 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
         {/* ── Cover ── */}
         {show('main') && (
           <div className="report-cover cover-block text-center">
-            {branding.logo && <img src={branding.logo} alt={orgName} className="mx-auto mb-5 h-20 w-auto rounded-xl border border-border/60 bg-white p-2" />}
-            <div className="text-[14px] font-bold tracking-wide text-[#2E5E73]" style={{ color: branding.primary }}>{orgName}</div>
-            {branding.tagline && <div className="mt-1 text-[12.5px] text-[#5E7180]">{branding.tagline}</div>}
-            <h1 className="mt-7 text-3xl font-extrabold font-heading leading-snug">{t.reportTitle}</h1>
+            {/* formal banner — incubator identity */}
+            <div className="cover-band absolute inset-x-0 top-0 flex min-h-16 items-center justify-center gap-3 px-6 py-3 text-white" style={{ background: branding.primary }}>
+              {branding.logo && <img src={branding.logo} alt={orgName} className="h-10 w-auto rounded-md bg-white/95 p-1" />}
+              <div className="leading-tight">
+                <div className="text-[15px] font-extrabold font-heading">{orgName}</div>
+                {branding.tagline && <div className="text-[11px] opacity-85">{branding.tagline}</div>}
+              </div>
+            </div>
+            <div className="mt-24" aria-hidden />
+            <h1 className="mt-2 text-3xl font-extrabold font-heading leading-snug">{t.reportTitle}</h1>
             <div className="mx-auto mt-2 h-1 w-24 rounded-full" style={{ background: branding.primary }} />
             <div className="mt-8 space-y-1.5">
               <div className="text-2xl font-bold font-heading">{projectName}</div>
@@ -97,6 +113,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
               <span className="text-[#7A8B98]">{t.kpiScore}:</span><strong className="num">{snap.score.toFixed(1)} / 10</strong>
             </div>
             {branding.reportCoverNote && <div className="mt-8 text-[12.5px] text-[#7A8B98]">{branding.reportCoverNote}</div>}
+            <div className="mt-6 text-[11.5px] font-semibold text-[#5E7180]">{t.toolCredits}</div>
             <div className="mx-auto mt-10 max-w-xl rounded-xl border border-border/70 bg-[#F7FAFB] px-4 py-3 text-[12px] leading-relaxed text-[#5E7180]">
               <ShieldCheck className="me-1.5 -mt-0.5 inline h-4 w-4 text-[#3E7C59]" />
               {t.coverConf}
@@ -109,7 +126,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
           <div className="report-section pt-10">
             <h2 className="text-2xl font-extrabold font-heading">{t.toc}</h2>
             <ol className="mt-4 space-y-2 text-[14px]">
-              {[t.sec1, t.sec2, t.sec3, t.sec4, t.sec5, t.sec6, t.sec7, t.sec8].map((s, i) => (
+              {[t.sec1, t.sec2, t.sec3, t.sec4, t.sec5, t.sec6, t.sec7, t.sec8, t.sec9].map((s, i) => (
                 <li key={i} className="flex items-center gap-3 border-b border-border/50 pb-2">
                   <span className="num flex h-7 w-7 items-center justify-center rounded-lg text-[12.5px] font-bold text-white" style={{ background: branding.primary }}>{i + 1}</span>
                   <span className="font-semibold">{s}</span>
@@ -143,6 +160,8 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
         {/* ── Section 2: products ── */}
         {show('main') && (
           <ReportSection n={2} title={t.sec2} branding={branding}>
+            <DocCard lang={lang} k="unitEconomics" />
+            <div className="tbl-wrap">
             <table className="fin-table">
               <thead><tr>
                 <th>{t.productName}</th><th>{t.revenueModel}</th><th>{t.pPrice}</th><th>{t.pVariable}</th><th>{t.pQty}</th><th>{t.ueMonthlyRev}</th><th>{t.ueMonthlyMargin}</th>
@@ -166,6 +185,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
                 <tr className="total-row"><td colSpan={5}>{t.total}</td><td>{money(snap.base.rev)}</td><td>{money(snap.base.rev - snap.base.varCost)}</td></tr>
               </tbody>
             </table>
+            </div>
           </ReportSection>
         )}
 
@@ -174,6 +194,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
           <ReportSection n={3} title={t.sec3} branding={branding}>
             <h3 className="mb-2 text-[15px] font-bold font-heading">{t.personaTitle}</h3>
             {p.market.personas.length ? (
+              <div className="tbl-wrap">
               <table className="fin-table">
                 <thead><tr><th>{t.peName}</th><th>{t.peAge}</th><th>{t.peLocation}</th><th>{t.pePower}</th><th>{t.peMonthly}</th></tr></thead>
                 <tbody>
@@ -185,6 +206,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : <p className="text-[13px] text-[#7A8B98]">{t.personaNo}</p>}
             {p.market.personas.some(pe => pe.description) && (
               <ul className="mt-2 list-disc space-y-1 ps-5 text-[13px] text-[#4A5B68]">
@@ -194,6 +216,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
 
             <h3 className="mb-2 mt-5 text-[15px] font-bold font-heading">{t.competitorsTitle}</h3>
             {p.market.competitors.length ? (
+              <div className="tbl-wrap">
               <table className="fin-table">
                 <thead><tr><th>{t.compName}</th><th>{t.compOffer}</th><th>{t.compPrice}</th><th>{t.compEdge}</th></tr></thead>
                 <tbody>
@@ -206,6 +229,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : <p className="text-[13px] text-[#7A8B98]">{t.personaNo}</p>}
 
             <h3 className="mb-2 mt-5 text-[15px] font-bold font-heading">{t.swotTitle}</h3>
@@ -265,6 +289,8 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
         {/* ── Section 6: indicators & smart reading ── */}
         {show('main') && (
           <ReportSection n={6} title={t.sec6} branding={branding}>
+            <DocCard lang={lang} k="indicators" />
+            <div className="tbl-wrap">
             <table className="fin-table">
               <thead><tr><th>{t.indicatorsTitle}</th><th className="w-28">{t.kpiScore}</th><th>{t.hint}</th></tr></thead>
               <tbody>
@@ -277,6 +303,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="mt-5">
               <h3 className="mb-2 text-[15px] font-bold font-heading">{t.execBriefTitle}</h3>
               <div className={`alert-calm alert-${c.tone} text-[13px] leading-relaxed`}>
@@ -331,6 +358,22 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
             <OnePager p={p} />
           </div>
         )}
+
+        {/* ── Section 9: methodology, definitions & formulas (static) ── */}
+        {show('main') && (
+          <ReportSection n={9} title={t.sec9} branding={branding}>
+            <p className="mb-4 rounded-xl border border-[#C9DAE5] bg-[#F7FAFB] p-3.5 text-[13px] leading-relaxed text-[#3A4A56]">
+              {x.dMethodIntro}
+            </p>
+            <div className="grid gap-3 print:grid-cols-1 sm:grid-cols-2">
+              {METHOD_KEYS.map(k => <DocCard key={k} lang={lang} k={k} />)}
+            </div>
+            <div className="mt-6 rounded-xl border border-border/70 bg-white px-4 py-3.5 text-center">
+              <div className="text-[12.5px] font-bold text-[#2E5E73]">{t.toolCredits}</div>
+              <div className="mt-1 text-[11px] text-[#7A8B98]">{t.reportGenerated}: {fmtDate(Date.now(), lang)}</div>
+            </div>
+          </ReportSection>
+        )}
       </div>
     </div>
   );
@@ -339,8 +382,8 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
 function InfoLine({ k, v }: { k: string; v?: string }) {
   return (
     <div className="flex gap-2 border-b border-border/40 py-1">
-      <span className="w-36 shrink-0 text-[#7A8B98]">{k}</span>
-      <strong><bdi>{v || t_na}</bdi></strong>
+      <span className="w-28 shrink-0 text-[#7A8B98] sm:w-36">{k}</span>
+      <strong className="min-w-0 break-words"><bdi>{v || t_na}</bdi></strong>
     </div>
   );
 }

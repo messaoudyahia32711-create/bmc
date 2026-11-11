@@ -8,6 +8,7 @@ import {
   computeSnapshot, getProductYearTotals, loanSchedule, buildScfYear, assetTotals,
 } from '@/lib/engine';
 import { BarChartSvg, LineChartSvg } from './bmc-ui';
+import { getDoc, DOC_LABEL, DOC_TITLES, DocKey } from '@/lib/annex-docs';
 
 export interface AppxProps { p: Project; lang: Lang }
 
@@ -16,15 +17,43 @@ const M = (lang: Lang) => (n: number) => fmtMoney(n, lang);
 
 function FinTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
   return (
-    <table className="fin-table">
-      <thead><tr>{headers.map((h, i) => <th key={i}>{h}</th>)}</tr></thead>
-      <tbody>{children}</tbody>
-    </table>
+    <div className="tbl-wrap">
+      <table className="fin-table">
+        <thead><tr>{headers.map((h, i) => <th key={i}>{h}</th>)}</tr></thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
   );
 }
 
 export function Note({ children }: { children: React.ReactNode }) {
   return <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">{children}</p>;
+}
+
+/** Reference definition + formulas card — static content, identical in every project. */
+export function DocCard({ lang, k }: { lang: Lang; k: DocKey }) {
+  const d = getDoc(lang, k);
+  return (
+    <div className="doc-card mb-3 rounded-xl border border-border/60 bg-[#F7FAFB] px-4 py-3 print:break-inside-avoid">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span aria-hidden className="text-[#C99A3C]">§</span>
+        <span className="text-[13.5px] font-extrabold font-heading text-[#2E5E73]">{DOC_TITLES[k][lang]}</span>
+        <span className="rounded-full border border-[#C9DAE5] bg-white px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-[#8FA0AD]">{DOC_LABEL[lang]}</span>
+      </div>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#3A4A56]">{d.def}</p>
+      {d.formulas.length > 0 && (
+        <div className="mt-2.5 grid gap-1.5">
+          {d.formulas.map((f, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-[12px] font-semibold text-[#4A5B68]">{f.label}:</span>
+              <code dir="ltr" className="rounded-lg border border-border/60 bg-white px-2.5 py-1 text-[12px] tracking-tight text-[#22313A]">{f.expr}</code>
+            </div>
+          ))}
+        </div>
+      )}
+      {d.note && <p className="mt-2 text-[11px] leading-relaxed text-[#7A8B98]">{d.note}</p>}
+    </div>
+  );
 }
 
 // ── Annexe 01: break-even ────────────────────────────────────────────────────
@@ -41,6 +70,7 @@ export function AppendixBreakEven({ p, lang }: AppxProps) {
   ];
   return (
     <div>
+      <DocCard lang={lang} k="breakEven" />
       <FinTable headers={t.beHeaders}>
         {t.beRows.map((r, i) => (
           <tr key={i} className={i === 5 || i === 6 ? 'subtotal-row' : i === 7 ? 'total-row' : ''}>
@@ -58,14 +88,17 @@ export function AppendixScenario({ p, lang }: AppxProps) {
   const t = T(lang), m = M(lang);
   const sc: [string, number][] = [[t.scenarios[0], p.market.growthOpt / 100], [t.scenarios[1], p.market.growthReal / 100], [t.scenarios[2], p.market.growthPes / 100]];
   return (
-    <FinTable headers={t.tableScenario}>
-      {sc.map(([n, g], i) => (
-        <tr key={i}>
-          <td className="font-semibold">{n}</td>
-          {Array.from({ length: 5 }, (_, y) => <td key={y}>{m(getProductYearTotals(p, y + 1, g).rev)}</td>)}
-        </tr>
-      ))}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="scenarios" />
+      <FinTable headers={t.tableScenario}>
+        {sc.map(([n, g], i) => (
+          <tr key={i}>
+            <td className="font-semibold">{n}</td>
+            {Array.from({ length: 5 }, (_, y) => <td key={y}>{m(getProductYearTotals(p, y + 1, g).rev)}</td>)}
+          </tr>
+        ))}
+      </FinTable>
+    </div>
   );
 }
 
@@ -73,21 +106,24 @@ export function AppendixScenario({ p, lang }: AppxProps) {
 export function AppendixDetailedRevenue({ p, lang }: AppxProps) {
   const t = T(lang), m = M(lang);
   return (
-    <FinTable headers={t.detailedHeaders}>
-      {Array.from({ length: 5 }, (_, i) => {
-        const y = i + 1;
-        const tot = getProductYearTotals(p, y, p.market.growthReal / 100);
-        const margin = tot.rev - tot.varCost;
-        const rate = tot.rev > 0 ? (margin / tot.rev) * 100 : 0;
-        return (
-          <tr key={y}>
-            <td className="font-semibold">{y}</td>
-            <td>{m(tot.rev)}</td><td>{m(tot.varCost)}</td><td>{m(margin)}</td>
-            <td className={rate < 20 ? 'negative' : 'positive'}>{rate.toFixed(1)}%</td>
-          </tr>
-        );
-      })}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="detailedRevenue" />
+      <FinTable headers={t.detailedHeaders}>
+        {Array.from({ length: 5 }, (_, i) => {
+          const y = i + 1;
+          const tot = getProductYearTotals(p, y, p.market.growthReal / 100);
+          const margin = tot.rev - tot.varCost;
+          const rate = tot.rev > 0 ? (margin / tot.rev) * 100 : 0;
+          return (
+            <tr key={y}>
+              <td className="font-semibold">{y}</td>
+              <td>{m(tot.rev)}</td><td>{m(tot.varCost)}</td><td>{m(margin)}</td>
+              <td className={rate < 20 ? 'negative' : 'positive'}>{rate.toFixed(1)}%</td>
+            </tr>
+          );
+        })}
+      </FinTable>
+    </div>
   );
 }
 
@@ -96,17 +132,20 @@ export function AppendixAssets({ p, lang }: AppxProps) {
   const t = T(lang), m = M(lang);
   const a = assetTotals(p);
   return (
-    <FinTable headers={t.assetHeaders}>
-      {a.rows.map((r, i) => (
-        <tr key={i}>
-          <td>{r.name}</td><td className="text-muted-foreground">{r.account}</td>
-          <td>{m(r.value)}</td><td>{r.years}</td><td>{m(r.dep)}</td>
+    <div>
+      <DocCard lang={lang} k="assets" />
+      <FinTable headers={t.assetHeaders}>
+        {a.rows.map((r, i) => (
+          <tr key={i}>
+            <td>{r.name}</td><td className="text-muted-foreground">{r.account}</td>
+            <td>{m(r.value)}</td><td>{r.years}</td><td>{m(r.dep)}</td>
+          </tr>
+        ))}
+        <tr className="total-row">
+          <td colSpan={2}>{t.total}</td><td>{m(a.invest)}</td><td>{t.na}</td><td>{m(a.dep)}</td>
         </tr>
-      ))}
-      <tr className="total-row">
-        <td colSpan={2}>{t.total}</td><td>{m(a.invest)}</td><td>{t.na}</td><td>{m(a.dep)}</td>
-      </tr>
-    </FinTable>
+      </FinTable>
+    </div>
   );
 }
 
@@ -131,13 +170,16 @@ export function AppendixFinancing({ p, lang }: AppxProps) {
     [gap > 0 ? t.finGap : t.finOk, Math.abs(gap), t.na, gap > 0 ? t.nGapYes : t.nGapNo, gap > 0 ? 'total-row' : 'subtotal-row'],
   ];
   return (
-    <FinTable headers={t.financingHeaders}>
-      {rows.map((r, i) => (
-        <tr key={i} className={r[4]}>
-          <td>{r[0]}</td><td>{m(r[1])}</td><td>{r[2]}</td><td className="text-muted-foreground">{r[3]}</td>
-        </tr>
-      ))}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="financing" />
+      <FinTable headers={t.financingHeaders}>
+        {rows.map((r, i) => (
+          <tr key={i} className={r[4]}>
+            <td>{r[0]}</td><td>{m(r[1])}</td><td>{r[2]}</td><td className="text-muted-foreground">{r[3]}</td>
+          </tr>
+        ))}
+      </FinTable>
+    </div>
   );
 }
 
@@ -147,15 +189,18 @@ export function AppendixLoan({ p, lang }: AppxProps) {
   const l = loanSchedule(p);
   if (!l.rows.length) return <p className="text-[13px] text-muted-foreground">{t.noLoan}</p>;
   return (
-    <FinTable headers={t.loanHeaders}>
-      {l.rows.map(r => (
-        <tr key={r.y}>
-          <td className="font-semibold">{r.y}</td>
-          <td>{m(r.annual)}</td><td>{m(r.interest)}</td><td>{m(r.principal)}</td>
-          <td className={r.balance > 0 ? '' : 'positive'}>{m(r.balance)}</td>
-        </tr>
-      ))}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="loan" />
+      <FinTable headers={t.loanHeaders}>
+        {l.rows.map(r => (
+          <tr key={r.y}>
+            <td className="font-semibold">{r.y}</td>
+            <td>{m(r.annual)}</td><td>{m(r.interest)}</td><td>{m(r.principal)}</td>
+            <td className={r.balance > 0 ? '' : 'positive'}>{m(r.balance)}</td>
+          </tr>
+        ))}
+      </FinTable>
+    </div>
   );
 }
 
@@ -165,6 +210,7 @@ export function AppendixCashflow({ p, lang }: AppxProps) {
   const s = computeSnapshot(p);
   return (
     <div>
+      <DocCard lang={lang} k="cashflow" />
       <FinTable headers={t.cashHeaders}>
         {s.cashRows.map(r => (
           <tr key={r.m}>
@@ -206,6 +252,7 @@ export function AppendixCashGap({ p, lang }: AppxProps) {
   ];
   return (
     <div>
+      <DocCard lang={lang} k="cashGap" />
       <FinTable headers={t.cashGapHeaders}>
         {t.cashGapRows.map((r, i) => (
           <tr key={i} className={i === 3 ? 'subtotal-row' : i === 4 ? 'total-row' : ''}>
@@ -227,6 +274,7 @@ export function AppendixTax({ p, lang }: AppxProps) {
   }[key as never] || key);
   return (
     <div>
+      <DocCard lang={lang} k="tax" />
       <FinTable headers={t.taxHeaders}>
         {Array.from({ length: 5 }, (_, i) => {
           const y = i + 1;
@@ -265,30 +313,33 @@ export function AppendixSCF({ p, lang }: AppxProps) {
     </tr>
   );
   return (
-    <FinTable headers={t.scfHeaders}>
-      <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[0]}</td></tr>
-      {row(t.scfLabels[0], '70', rows.map(r => r.rev))}
-      {row(t.scfLabels[1], '60', rows.map(r => -r.cogs))}
-      {row(t.scfLabels[2], '61/62', rows.map(r => -r.ext))}
-      {row(t.scfLabels[3], 'VA = 70 − (60+61+62)', rows.map(r => r.va), 'subtotal-row')}
-      <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[1]}</td></tr>
-      {row(t.scfLabels[4], '63/64', rows.map(r => -r.sal))}
-      {row(t.scfLabels[5], 'EBE = VA − (63+64)', rows.map(r => r.ebe), 'subtotal-row')}
-      <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[2]}</td></tr>
-      {row(t.scfLabels[6], '68', rows.map(r => -r.depr))}
-      {row(t.scfLabels[7], 'RE = EBE − 68', rows.map(r => r.opResult), 'subtotal-row')}
-      <tr>
-        <td>{t.scfLabels[8]} <span className="text-muted-foreground text-[11px]">69</span></td>
-        {rows.map((r, i) => (
-          <td key={i}>
-            {r.tax.rate === 0 && <span className="positive">{t.exempted}<br /></span>}
-            {m(r.tax.amount)}
-            <br /><small className="text-muted-foreground">{regimeLabel(r.tax.regime)} {(r.tax.rate * 100).toFixed(0)}%</small>
-          </td>
-        ))}
-      </tr>
-      {row(t.scfLabels[9], 'RN = RE − 69', rows.map(r => r.net), 'total-row')}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="scf" />
+      <FinTable headers={t.scfHeaders}>
+        <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[0]}</td></tr>
+        {row(t.scfLabels[0], '70', rows.map(r => r.rev))}
+        {row(t.scfLabels[1], '60', rows.map(r => -r.cogs))}
+        {row(t.scfLabels[2], '61/62', rows.map(r => -r.ext))}
+        {row(t.scfLabels[3], 'VA = 70 − (60+61+62)', rows.map(r => r.va), 'subtotal-row')}
+        <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[1]}</td></tr>
+        {row(t.scfLabels[4], '63/64', rows.map(r => -r.sal))}
+        {row(t.scfLabels[5], 'EBE = VA − (63+64)', rows.map(r => r.ebe), 'subtotal-row')}
+        <tr className="subtotal-row"><td colSpan={6} className="font-bold">{t.scfSections[2]}</td></tr>
+        {row(t.scfLabels[6], '68', rows.map(r => -r.depr))}
+        {row(t.scfLabels[7], 'RE = EBE − 68', rows.map(r => r.opResult), 'subtotal-row')}
+        <tr>
+          <td>{t.scfLabels[8]} <span className="text-muted-foreground text-[11px]">69</span></td>
+          {rows.map((r, i) => (
+            <td key={i}>
+              {r.tax.rate === 0 && <span className="positive">{t.exempted}<br /></span>}
+              {m(r.tax.amount)}
+              <br /><small className="text-muted-foreground">{regimeLabel(r.tax.regime)} {(r.tax.rate * 100).toFixed(0)}%</small>
+            </td>
+          ))}
+        </tr>
+        {row(t.scfLabels[9], 'RN = RE − 69', rows.map(r => r.net), 'total-row')}
+      </FinTable>
+    </div>
   );
 }
 
@@ -315,13 +366,16 @@ export function AppendixBMC({ p, lang }: AppxProps) {
       `${products}\n${lang === 'fr' ? 'CA mensuel' : lang === 'en' ? 'Monthly revenue' : 'رقم الأعمال الشهري'}: ${m(s.base.rev)}\n${lang === 'fr' ? 'CA annuel' : lang === 'en' ? 'Annual revenue' : 'رقم الأعمال السنوي'}: ${m(s.base.rev * 12)}`],
   ];
   return (
-    <div className="bmc-grid">
-      {cells.map(([cls, title, body], i) => (
-        <div key={i} className={`bmc-cell ${cls}`}>
-          <strong>{title}</strong>
-          <div className="whitespace-pre-line leading-relaxed">{body}</div>
-        </div>
-      ))}
+    <div>
+      <DocCard lang={lang} k="bmc" />
+      <div className="bmc-grid">
+        {cells.map(([cls, title, body], i) => (
+          <div key={i} className={`bmc-cell ${cls}`}>
+            <strong>{title}</strong>
+            <div className="whitespace-pre-line leading-relaxed">{body}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -340,15 +394,18 @@ export function AppendixBMCFinance({ p, lang }: AppxProps) {
     [t.bmcFinRows[4], totalMonthly, totalMonthly * 12, 'negative'],
   ];
   return (
-    <FinTable headers={t.bmcFinHeaders}>
-      {rows.map((r, i) => (
-        <tr key={i} className={i === 4 ? 'total-row' : ''}>
-          <td>{r[0]}</td>
-          <td className={i === 4 ? '' : r[3]}>{m(r[1])}</td>
-          <td className={i === 4 ? '' : r[3]}>{m(r[2])}</td>
-        </tr>
-      ))}
-    </FinTable>
+    <div>
+      <DocCard lang={lang} k="bmcFinance" />
+      <FinTable headers={t.bmcFinHeaders}>
+        {rows.map((r, i) => (
+          <tr key={i} className={i === 4 ? 'total-row' : ''}>
+            <td>{r[0]}</td>
+            <td className={i === 4 ? '' : r[3]}>{m(r[1])}</td>
+            <td className={i === 4 ? '' : r[3]}>{m(r[2])}</td>
+          </tr>
+        ))}
+      </FinTable>
+    </div>
   );
 }
 

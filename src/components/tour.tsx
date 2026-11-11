@@ -22,7 +22,7 @@ export function Tour({ onClose }: { onClose: (dontShow: boolean) => void }) {
   const s = steps[i];
   return (
     <Dialog open onOpenChange={v => !v && onClose(dontShow)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="no-print sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary"><s.icon className="h-5 w-5" />{s.title}</DialogTitle>
           <DialogDescription className="sr-only">{s.title}</DialogDescription>
@@ -54,7 +54,7 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
   const { t } = useApp();
   return (
     <Dialog open onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="no-print max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-primary">{t.guideTitle}</DialogTitle>
           <DialogDescription className="sr-only">{t.guideTitle}</DialogDescription>

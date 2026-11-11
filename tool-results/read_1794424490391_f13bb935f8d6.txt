@@ -1,0 +1,452 @@
+     1→// ─── Reference definitions & formulas for every annex/section ────────────────
+     2→// STATIC educational content: identical in every project — only the numbers,
+     3→// tables and charts change from one project to another. Formulas mirror 1:1
+     4→// what src/lib/engine.ts actually computes.
+     5→import { Lang } from './types';
+     6→
+     7→export interface FormulaRow { label: string; expr: string }
+     8→export interface AnnexDoc {
+     9→  def: string;                 // full definition (report)
+    10→  short: string;               // one-line version (deck slide note)
+    11→  formulas: FormulaRow[];
+    12→  note?: string;               // legend / caveat
+    13→}
+    14→
+    15→export type DocKey =
+    16→  | 'unitEconomics' | 'breakEven' | 'scenarios' | 'detailedRevenue' | 'assets'
+    17→  | 'financing' | 'loan' | 'cashflow' | 'cashGap' | 'tax' | 'scf'
+    18→  | 'bmc' | 'bmcFinance' | 'indicators';
+    19→
+    20→const ar: Record<DocKey, AnnexDoc> = {
+    21→  unitEconomics: {
+    22→    def: 'يعرض هذا القسم اقتصاديات الوحدة لكل منتج أو خدمة. هامش الوحدة هو الفرق بين سعر البيع للوحدة وتكلفتها المتغيرة، وهو ما يتبقى من كل وحدة مبيعة لتغطية التكاليف الثابتة ثم توليد الربح؛ فإذا كان هامش الوحدة سالباً أو ضعيفاً فإن ازدياد الكميات يضخّم الخسارة بدل الربح.',
+    23→    short: 'هامش الوحدة = سعر البيع − التكلفة المتغيرة؛ ومنه تُبنى كل النتائج الشهرية.',
+    24→    formulas: [
+    25→      { label: 'هامش الوحدة', expr: 'MU = P − CVu' },
+    26→      { label: 'الإيراد الشهري', expr: 'CA = P × Q' },
+    27→      { label: 'الهامش الشهري', expr: 'M = MU × Q' },
+    28→      { label: 'نسبة الهامش', expr: 'Taux = (P − CVu) ÷ P × 100' },
+    29→    ],
+    30→    note: 'P سعر البيع للوحدة، CVu التكلفة المتغيرة للوحدة، Q الكمية المبيعة شهرياً.',
+    31→  },
+    32→  breakEven: {
+    33→    def: 'نقطة التعادل هي مستوى النشاط الذي تغطي فيه الإيرادات كامل التكاليف (الثابتة والمتغيرة) فلا ربح ولا خسارة. وهي من أهم المؤشرات التي تبحث عنها لجنة التقييم: كلما بلُغت نقطة التعادل مبكراً كان المشروع أقل عرضة للخطر. وتُقدَّم هنا بثلاث صيغ: بالقيمة، وبالكمية، وبالمدة الشهرية اللازمة لبلوغها.',
+    34→    short: 'نقطة التعادل: مستوى المبيعات الذي تُغطّى عنده كل التكاليف دون ربح أو خسارة.',
+    35→    formulas: [
+    36→      { label: 'هامش التكاليف المتغيرة', expr: 'M/CV = CA − CV' },
+    37→      { label: 'نسبة الهامش', expr: 'Taux M/CV = (CA − CV) ÷ CA' },
+    38→      { label: 'نقطة التعادل بالقيمة', expr: 'SR = CF ÷ Taux M/CV' },
+    39→      { label: 'نقطة التعادل بالكمية', expr: 'SRq = CF ÷ M/CV unitaire' },
+    40→      { label: 'نقطة التعادل بالمدة', expr: 'Durée (mois) = SR ÷ CA mensuel' },
+    41→    ],
+    42→    note: 'CF التكاليف الثابتة الشهرية، CV التكاليف المتغيرة، CA رقم الأعمال الشهري، M/CV unitaire = سعر البيع − التكلفة المتغيرة للوحدة.',
+    43→  },
+    44→  scenarios: {
+    45→    def: 'يُسقَط رقم الأعمال على خمس سنوات وفق ثلاثة سيناريوهات للنمو السنوي: متفائل وواقعي ومتحفظ. يُعتمد السيناريو الواقعي في باقي الحسابات، بينما يُستخدم التفاوت بين السيناريوهات لقياس حساسية المشروع لتطور السوق ولإثبات أن الجدوى ليست مبنية على فرضية واحدة مثالية.',
+    46→    short: 'رقم الأعمال يُسقَط على 5 سنوات بثلاثة سيناريوهات نمو: متفائل، واقعي، متحفظ.',
+    47→    formulas: [
+    48→      { label: 'رقم الأعمال في السنة t', expr: 'CA(t) = CA(1) × (1 + g)^(t−1)' },
+    49→      { label: 'معدل النمو السنوي المركب', expr: 'TCAM = (CA(5) ÷ CA(1))^(1/4) − 1' },
+    50→    ],
+    51→    note: 'g معدل النمو السنوي المفترض للكميات في السيناريو المعني.',
+    52→  },
+    53→  detailedRevenue: {
+    54→    def: 'تفصيل سنوي لرقم الأعمال في السيناريو الواقعي إلى تكاليف متغيرة وهامش إجمالي ونسبة هامش، لبيان قدرة النشاط على توليد الهامش الذي سيغطي التكاليف الثابتة. فإذا قلّت النسبة عن 20% وجب مراجعة التسعير أو هيكل التكاليف.',
+    55→    short: 'الهامش الإجمالي = رقم الأعمال − التكاليف المتغيرة؛ ونسبته مقياس قدرة التغطية.',
+    56→    formulas: [
+    57→      { label: 'الهامش الإجمالي', expr: 'Marge brute = CA − CV' },
+    58→      { label: 'النسبة', expr: 'Taux = Marge brute ÷ CA × 100' },
+    59→    ],
+    60→  },
+    61→  assets: {
+    62→    def: 'تُدرَج في هذا الملحق كل الاستثمارات الأولية وفق طبيعتها ومَرقمها المحاسبي في النظام المحاسبي المالي (SCF)، ويُحتسب اهتلاكها بطريقة الخط الثابت على مدى مدة الاستعمال المقدَّرة لكل أصل. والاهتلاك عبء محاسبي غير نقدي يُخصم من النتيجة قبل الضريبة ولا يخرج من الخزينة.',
+    63→    short: 'الاهتلاك الخطي = قيمة الأصل ÷ مدة استعماله؛ وهو عبء محاسبي غير نقدي.',
+    64→    formulas: [
+    65→      { label: 'قسط الاهتلاك السنوي (خطي)', expr: 'Dotation = Valeur ÷ Durée' },
+    66→      { label: 'إجمالي الاستثمار', expr: 'I = Σ Valeurs' },
+    67→      { label: 'مجموع الاهتلاكات السنوي', expr: 'Σ Dotations' },
+    68→    ],
+    69→    note: 'المدد المعتادة: سنة لمصاريف التأسيس، 3 سنوات للبرمجيات، 5 سنوات للعتاد الإعلامي والمكتبي، 10 سنوات للآلات والمعدات.',
+    70→  },
+    71→  financing: {
+    72→    def: 'يقارن هذا الملحق بين إجمالي الحاجة المالية للمشروع (الاستثمارات + رأس المال العامل) ومصادر التمويل المجمَّعة (مساهمة شخصية، هبة/دعم، قرض بنكي)، فيُظهر فجوة تمويلية يجب معالجتها أو اكتمالاً في التغطية. ويُحتسب رأس المال العامل انطلاقاً من أدنى رصيد خزينة متراكم متوقع خلال السنة الأولى.',
+    73→    short: 'الحاجة المالية = الاستثمارات + رأس المال العامل؛ والفجوة = الحاجة − التمويل المجمَّع.',
+    74→    formulas: [
+    75→      { label: 'الحاجة المالية', expr: 'Besoin = Investissements + BFR' },
+    76→      { label: 'رأس المال العامل', expr: 'BFR = | min(0 ; Trésorerie cumulée) |' },
+    77→      { label: 'الفجوة التمويلية', expr: 'Écart = Besoin − (Apport + Subvention + Crédit)' },
+    78→    ],
+    79→  },
+    80→  loan: {
+    81→    def: 'جدول سداد القرض بنظام الأقساط السنوية الثابتة: القسط ثابت عبر المدة، لكن تركيبته تتغير من سنة لأخرى؛ فالفوائد تُحتسب على الرصيد المتبقي فتتناقص حصتها عاماً بعد عام مقابل تزايد حصة أصل الدين المُسدَّد.',
+    82→    short: 'القسط الثابت يوزَّع بين فوائد على الرصيد المتبقي وأصل الدين المُسدَّد.',
+    83→    formulas: [
+    84→      { label: 'القسط السنوي الثابت', expr: 'A = C × i ÷ (1 − (1 + i)^−n)' },
+    85→      { label: 'فائدة السنة y', expr: 'Int(y) = Solde(y−1) × i' },
+    86→      { label: 'أصل المُسدَّد', expr: 'Principal(y) = A − Int(y)' },
+    87→      { label: 'القسط الشهري', expr: 'Mensualité = A ÷ 12' },
+    88→    ],
+    89→    note: 'C مبلغ القرض، i نسبة الفائدة السنوية، n المدة بالسنوات، Solde الرصيد المتبقي.',
+    90→  },
+    91→  cashflow: {
+    92→    def: 'خطة الخزينة الشهرية للسنة الأولى: يُقابل فيها كل شهر التحصيلات المتوقعة مع المدفوعات (تكاليف متغيرة، تكاليف ثابتة، قسط القرض)، ويُرحَّل الرصيد المتراكم من شهر لآخر انطلاقاً من رصيد البدء (التمويل المجمَّع − الاستثمارات − مصاريف ما قبل التشغيل). والخزينة أول ما تجفّ منه المشاريع؛ لذلك يُعد هذا الملحق من أدق الملاحق وأكثرها إقناعاً للجنة.',
+    93→    short: 'صافي كل شهر = التحصيلات − المدفوعات، ويُرحَّل المتراكم شهراً بعد شهر.',
+    94→    formulas: [
+    95→      { label: 'المدفوعات الشهرية', expr: 'Décaiss. = CV + CF + Échéance' },
+    96→      { label: 'الصافي الشهري', expr: 'Solde(m) = Encaiss.(m) − Décaiss.(m)' },
+    97→      { label: 'الرصيد المتراكم', expr: 'Cumul(m) = Cumul(m−1) + Solde(m)' },
+    98→      { label: 'رصيد البدء', expr: 'Cumul(0) = Financement − Invest. − Pré-démarrage' },
+    99→    ],
+   100→    note: 'الاهتلاك لا يدخل خطة الخزينة لأنه ليس تدفقاً نقدياً.',
+   101→  },
+   102→  cashGap: {
+   103→    def: 'يحدّد هذا الملحق الأشهر التي يغيب فيها الرصيد المتراكم عن الصفر، وأدنى نقطة تبلغها الخزينة، ومن ثمّ الحد الأدنى من التغطية النقدية اللازمة لضمان السيولة طوال السنة الأولى. فظهور رصيد موجب في نهاية السنة لا يغني عن تغطية العجز في أشهرها الأولى.',
+   104→    short: 'الحاجة النقدية = القيمة المطلقة لأدنى رصيد متراكم خلال 12 شهراً.',
+   105→    formulas: [
+   106→      { label: 'أدنى خزينة', expr: 'Trésorerie min = min (Cumul)' },
+   107→      { label: 'التغطية النقدية المطلوبة', expr: 'Couverture = | min(0 ; Cumul) |' },
+   108→    ],
+   109→  },
+   110→  tax: {
+   111→    def: 'محاكاة العبء الجبائي على خمس سنوات وفق الأنظمة الجزائرية المعمول بها: نظام الضريبة الثابتة IFU المبنية على رقم الأعمال إذا لم يتعدَّ 30 مليون دج (5% للتجارة والإنتاج، 12% للخدمات، 10% للنشاط المختلط)، ونظام الضريبة على أرباح الشركات IBS بعد ذلك بنسبة 19% للإنتاج و23% للنشاط المختلط و26% للخدمات، مع احتساب سنوات الإعفاء وفق الصيغة القانونية وعلامة المشروع الناشئ.',
+   112→    short: 'IFU على رقم الأعمال حتى 30 مليون دج، ثم IBS على الربح (19/23/26%).',
+   113→    formulas: [
+   114→      { label: 'الضريبة الثابتة', expr: 'IFU = CA × Taux (5% / 10% / 12%)' },
+   115→      { label: 'الضريبة على الأرباح', expr: 'IBS = Résultat avant impôt × (19% / 23% / 26%)' },
+   116→      { label: 'النتيجة الصافية', expr: 'RN = Résultat avant impôt − Impôt' },
+   117→    ],
+   118→    note: 'المحاكاة تعليمية؛ تُراجع مع محاسب معتمد وفق آخر التعديلات القانونية.',
+   119→  },
+   120→  scf: {
+   121→    def: 'جدول حسابات النتائج وفق النظام المحاسبي المالي الجزائري (SCF) لخمس سنوات: يبدأ من رقم الأعمال ويُخصم منه الاستهلاكات الوسيطة للوصول إلى القيمة المضافة، ثم أعباء الأجراء لبلوغ فائض التشغيل الإجمالي (EBE)، ثم الاهتلاكات للنتيجة التشغيلية، وأخيراً الضريبة للنتيجة الصافية. وترقيم الحسابات (70، 60-62، 63-64، 68، 69) وفق دليل الحسابات الوطني.',
+   122→    short: 'من رقم الأعمال إلى النتيجة الصافية عبر: القيمة المضافة، EBE، النتيجة التشغيلية، ثم الضريبة.',
+   123→    formulas: [
+   124→      { label: 'القيمة المضافة', expr: 'VA = 70 − (60 + 61 + 62)' },
+   125→      { label: 'فائض التشغيل الإجمالي', expr: 'EBE = VA − (63 + 64)' },
+   126→      { label: 'النتيجة التشغيلية', expr: 'RE = EBE − 68' },
+   127→      { label: 'النتيجة الصافية', expr: 'RN = RE − 69' },
+   128→    ],
+   129→    note: '70: رقم الأعمال — 60/61/62: استهلاكات وسيطة — 63/64: أعباء الأجراء — 68: اهتلاكات — 69: ضرائب ورسوم.',
+   130→  },
+   131→  bmc: {
+   132→    def: 'نموذج العمل التجاري (BMC) أداة تخطيط استراتيجية من تسع خانات متكاملة تُلخّص منطق خلق القيمة وتقديمها والتقاطها: الشركاء الرئيسيون، الأنشطة الأساسية، الموارد الأساسية، عرض القيمة، علاقات العملاء، القنوات، شرائح العملاء، هيكل التكاليف، وتدفقات الإيرادات. والخانات مترابطة؛ فأي تعديل في عرض القيمة أو الشرائح ينعكس مباشرة على هيكل التكاليف والإيرادات المفصَّل في الملحق الموالي.',
+   133→    short: 'تسع خانات تربط عرض القيمة بالسوق وبالهيكل المالي للمشروع.',
+   134→    formulas: [
+   135→      { label: 'النتيجة الشهرية قبل الضريبة', expr: 'R = CA − (CV + CF + D)' },
+   136→    ],
+   137→    note: 'CA الإيراد الشهري، CV التكاليف المتغيرة، CF التكاليف الثابتة، D الاهتلاك الشهري.',
+   138→  },
+   139→  bmcFinance: {
+   140→    def: 'يُترجم هذا الملحق خانات نموذج العمل إلى أرقام مالية مباشرة: كل شريحة من العملاء وكل عرض قيمة تقابلها كمية مبيعة وإيراد شهري، وكل نشاط ومورد يقابله بند تكلفة. ويُظهر الإجمالي الشهري والسنوي للتكاليف (متغيرة + ثابتة + اهتلاك) مقابل الإيراد، ليؤكد أن BMC ليس ملصقاً تسويقياً بل نظام اقتصادي قابل للقياس.',
+   141→    short: 'كل خانة في BMC لها ترجمة مالية: إيرادات مقابل تكاليف شهرية وسنوية.',
+   142→    formulas: [
+   143→      { label: 'التكلفة الشهرية الكلية', expr: 'CT = CV + CF + D' },
+   144→      { label: 'النتيجة الشهرية', expr: 'R = CA − CT' },
+   145→    ],
+   146→  },
+   147→  indicators: {
+   148→    def: 'تُترجم لوحة المؤشرات الأرقام الخام إلى قراءة تقييمية معيارية: يُقارن كل مؤشر بعتبات مرجعية (جيد / متوسط / ضعيف) لتُعطى لصاحب المشروع ولجنة التقييم رؤية فورية عن مواطن القوة ومواطن الخطر وترتيب الأولويات. فالعائد على الاستثمار يقيس مردودية كل دينار مُموَّل، ومدة الاسترداد تقيس السرعة التي يستعيد بها المشروع تمويله، مع احتساب الاهتلاكات لأنها تدفق نقدي محتجز داخل المؤسسة.',
+   149→    short: 'كل مؤشر يُقارن بعتبات مرجعية: جيد، متوسط، ضعيف — لقراءة وقرار واضحين.',
+   150→    formulas: [
+   151→      { label: 'العائد على الاستثمار', expr: 'ROI = RN (an 1) ÷ Financement × 100' },
+   152→      { label: 'مدة الاسترداد', expr: 'Payback = Financement ÷ (RN + Dotations)' },
+   153→      { label: 'نسبة القيمة المضافة', expr: 'VA ÷ CA' },
+   154→      { label: 'نسبة فائض التشغيل', expr: 'EBE ÷ CA' },
+   155→      { label: 'هامش التكاليف المتغيرة', expr: '(CA − CV) ÷ CA' },
+   156→    ],
+   157→  },
+   158→};
+   159→
+   160→const fr: Record<DocKey, AnnexDoc> = {
+   161→  unitEconomics: {
+   162→    def: 'Cette section présente l’économie unitaire de chaque produit ou service. La marge unitaire est la différence entre le prix de vente unitaire et le coût variable unitaire : c’est ce qui reste de chaque unité vendue pour couvrir les charges fixes puis générer le profit. Une marge unitaire nulle ou négative fait que l’augmentation des volumes amplifie la perte au lieu du profit.',
+   163→    short: 'Marge unitaire = prix de vente − coût variable ; c’est d’elle que découlent les résultats mensuels.',
+   164→    formulas: [
+   165→      { label: 'Marge unitaire', expr: 'MU = P − CVu' },
+   166→      { label: 'CA mensuel', expr: 'CA = P × Q' },
+   167→      { label: 'Marge mensuelle', expr: 'M = MU × Q' },
+   168→      { label: 'Taux de marge', expr: 'Taux = (P − CVu) ÷ P × 100' },
+   169→    ],
+   170→    note: 'P prix de vente unitaire, CVu coût variable unitaire, Q quantité vendue par mois.',
+   171→  },
+   172→  breakEven: {
+   173→    def: 'Le seuil de rentabilité est le niveau d’activité auquel les recettes couvrent la totalité des charges (fixes et variables), sans bénéfice ni perte. C’est l’un des premiers points examinés par le comité : plus le seuil est atteint tôt, moins le projet est exposé au risque. Il est présenté ici en valeur, en quantité et en durée (mois).',
+   174→    short: 'Seuil de rentabilité : niveau de ventes où toutes les charges sont couvertes, sans profit ni perte.',
+   175→    formulas: [
+   176→      { label: 'Marge sur coûts variables', expr: 'M/CV = CA − CV' },
+   177→      { label: 'Taux de marge', expr: 'Taux M/CV = (CA − CV) ÷ CA' },
+   178→      { label: 'Seuil en valeur', expr: 'SR = CF ÷ Taux M/CV' },
+   179→      { label: 'Seuil en quantité', expr: 'SRq = CF ÷ M/CV unitaire' },
+   180→      { label: 'Seuil en durée', expr: 'Durée (mois) = SR ÷ CA mensuel' },
+   181→    ],
+   182→    note: 'CF charges fixes mensuelles, CV charges variables, CA chiffre d’affaires mensuel.',
+   183→  },
+   184→  scenarios: {
+   185→    def: 'Le chiffre d’affaires est projeté sur cinq ans selon trois scénarios de croissance annuelle : optimiste, réaliste et prudent. Le scénario réaliste alimente le reste des calculs ; l’écart entre scénarios mesure la sensibilité du projet et prouve que la rentabilité ne repose pas sur une hypothèse unique idéale.',
+   186→    short: 'CA projeté sur 5 ans selon trois scénarios : optimiste, réaliste, prudent.',
+   187→    formulas: [
+   188→      { label: 'CA de l’année t', expr: 'CA(t) = CA(1) × (1 + g)^(t−1)' },
+   189→      { label: 'Croissance annuelle moyenne', expr: 'TCAM = (CA(5) ÷ CA(1))^(1/4) − 1' },
+   190→    ],
+   191→    note: 'g taux de croissance annuel supposé des quantités.',
+   192→  },
+   193→  detailedRevenue: {
+   194→    def: 'Détail annuel du chiffre d’affaires du scénario réaliste en coûts variables, marge brute et taux de marge, afin de mesurer la capacité de l’activité à générer la marge qui couvrira les charges fixes. Un taux inférieur à 20 % appelle une révision du prix ou de la structure des coûts.',
+   195→    short: 'Marge brute = CA − coûts variables ; son taux mesure la capacité de couverture.',
+   196→    formulas: [
+   197→      { label: 'Marge brute', expr: 'Marge brute = CA − CV' },
+   198→      { label: 'Taux', expr: 'Taux = Marge brute ÷ CA × 100' },
+   199→    ],
+   200→  },
+   201→  assets: {
+   202→    def: 'Toutes les immobilisations sont listées selon leur nature et leur compte du Système Comptable Financier (SCF), et amorties en linéaire sur leur durée d’utilité estimée. L’amortissement est une charge calculée, non décaissée : il réduit le résultat imposable sans sortir de la trésorerie.',
+   203→    short: 'Amortissement linéaire = valeur ÷ durée d’utilité ; charge calculée, non décaissée.',
+   204→    formulas: [
+   205→      { label: 'Dotation annuelle (linéaire)', expr: 'Dotation = Valeur ÷ Durée' },
+   206→      { label: 'Investissement total', expr: 'I = Σ Valeurs' },
+   207→      { label: 'Total des dotations', expr: 'Σ Dotations' },
+   208→    ],
+   209→    note: 'Durées usuelles : 1 an frais d’établissement, 3 ans logiciels, 5 ans matériel informatique et bureau, 10 ans machines et équipements.',
+   210→  },
+   211→  financing: {
+   212→    def: 'Ce tableau compare le besoin financier total (investissements + fonds de roulement) aux ressources réunies (apport personnel, subvention, crédit bancaire) et fait apparaître un éventuel déficit à corriger. Le fonds de roulement est calculé à partir du plus bas cumul de trésorerie prévisible de l’année 1.',
+   213→    short: 'Besoin = investissements + fonds de roulement ; écart = besoin − financement réuni.',
+   214→    formulas: [
+   215→      { label: 'Besoin financier', expr: 'Besoin = Investissements + BFR' },
+   216→      { label: 'Fonds de roulement', expr: 'BFR = | min(0 ; Trésorerie cumulée) |' },
+   217→      { label: 'Écart de financement', expr: 'Écart = Besoin − (Apport + Subvention + Crédit)' },
+   218→    ],
+   219→  },
+   220→  loan: {
+   221→    def: 'Échéancier de remboursement à annuités constantes : le versement est fixe, mais sa composition évolue — les intérêts, calculés sur le solde restant dû, diminuent d’année en année au profit du capital remboursé.',
+   222→    short: 'L’annuité constante se répartit entre intérêts sur le solde et capital remboursé.',
+   223→    formulas: [
+   224→      { label: 'Annuité constante', expr: 'A = C × i ÷ (1 − (1 + i)^−n)' },
+   225→      { label: 'Intérêts de l’année y', expr: 'Int(y) = Solde(y−1) × i' },
+   226→      { label: 'Capital remboursé', expr: 'Principal(y) = A − Int(y)' },
+   227→      { label: 'Mensualité', expr: 'Mensualité = A ÷ 12' },
+   228→    ],
+   229→    note: 'C capital emprunté, i taux annuel, n durée en années, Solde capital restant dû.',
+   230→  },
+   231→  cashflow: {
+   232→    def: 'Plan de trésorerie mensuel de l’année 1 : chaque mois confronte les encaissements prévus aux décaissements (coûts variables, charges fixes, échéance de crédit), avec report du cumul à partir du solde de départ (financement − investissements − frais pré-démarrage). La trésorerie est la première cause d’échec des projets ; ce tableau est donc le plus scruté par le comité.',
+   233→    short: 'Solde du mois = encaissements − décaissements, avec cumul reporté de mois en mois.',
+   234→    formulas: [
+   235→      { label: 'Décaissements du mois', expr: 'Décaiss. = CV + CF + Échéance' },
+   236→      { label: 'Solde du mois', expr: 'Solde(m) = Encaiss.(m) − Décaiss.(m)' },
+   237→      { label: 'Cumul', expr: 'Cumul(m) = Cumul(m−1) + Solde(m)' },
+   238→      { label: 'Solde de départ', expr: 'Cumul(0) = Financement − Invest. − Pré-démarrage' },
+   239→    ],
+   240→    note: 'L’amortissement n’entre pas dans le plan de trésorerie : ce n’est pas un flux monétaire.',
+   241→  },
+   242→  cashGap: {
+   243→    def: 'Ce tableau identifie les mois où le cumul passe sous zéro, le point le plus bas de la trésorerie et, par conséquent, la couverture minimale nécessaire pour sécuriser la liquidité de l’année 1. Un cumul positif en fin d’année ne compense pas un déficit des premiers mois.',
+   244→    short: 'Couverture nécessaire = valeur absolue du plus bas cumul de trésorerie sur 12 mois.',
+   245→    formulas: [
+   246→      { label: 'Trésorerie minimale', expr: 'Trésorerie min = min (Cumul)' },
+   247→      { label: 'Couverture requise', expr: 'Couverture = | min(0 ; Cumul) |' },
+   248→    ],
+   249→  },
+   250→  tax: {
+   251→    def: 'Simulation de la charge fiscale sur cinq ans selon les dispositifs algériens : IFU (assise sur le chiffre d’affaires) si celui-ci n’excède pas 30 M DA (5 % commerce et production, 12 % services, 10 % mixte), puis IBS sur le bénéfice (19 % production, 23 % mixte, 26 % services), en tenant compte des années d’exonération selon la forme juridique et le label startup.',
+   252→    short: 'IFU sur le CA jusqu’à 30 M DA, puis IBS sur le résultat (19/23/26 %).',
+   253→    formulas: [
+   254→      { label: 'IFU', expr: 'IFU = CA × Taux (5% / 10% / 12%)' },
+   255→      { label: 'IBS', expr: 'IBS = Résultat avant impôt × (19% / 23% / 26%)' },
+   256→      { label: 'Résultat net', expr: 'RN = Résultat avant impôt − Impôt' },
+   257→    ],
+   258→    note: 'Simulation pédagogique, à faire valider par un comptable agréé.',
+   259→  },
+   260→  scf: {
+   261→    def: 'Comptes de résultat selon le Système Comptable Financier (SCF) sur cinq ans : du chiffre d’affaires on déduit les consommations intermédiaires pour obtenir la valeur ajoutée, puis les charges de personnel pour atteindre l’EBE, puis les dotations aux amortissements pour le résultat opérationnel, enfin l’impôt pour le résultat net. La numérotation suit le plan comptable national (70, 60-62, 63-64, 68, 69).',
+   262→    short: 'Du CA au résultat net : valeur ajoutée, EBE, résultat opérationnel, impôt.',
+   263→    formulas: [
+   264→      { label: 'Valeur ajoutée', expr: 'VA = 70 − (60 + 61 + 62)' },
+   265→      { label: 'Excédent brut d’exploitation', expr: 'EBE = VA − (63 + 64)' },
+   266→      { label: 'Résultat opérationnel', expr: 'RE = EBE − 68' },
+   267→      { label: 'Résultat net', expr: 'RN = RE − 69' },
+   268→    ],
+   269→    note: '70 : CA — 60/61/62 : consommations intermédiaires — 63/64 : charges de personnel — 68 : dotations — 69 : impôts et taxes.',
+   270→  },
+   271→  bmc: {
+   272→    def: 'Le Business Model Canvas (BMC) est une matrice stratégique de neuf blocs interdépendants qui résume la logique de création, de délivrance et de capture de valeur : partenaires, activités, ressources, proposition de valeur, relations clients, canaux, segments, structure de coûts et flux de revenus. Tout changement d’un bloc se répercute sur la traduction financière détaillée dans l’annexe suivante.',
+   273→    short: 'Neuf blocs qui relient la proposition de valeur au marché et à l’équilibre financier.',
+   274→    formulas: [
+   275→      { label: 'Résultat mensuel avant impôt', expr: 'R = CA − (CV + CF + D)' },
+   276→    ],
+   277→    note: 'CA revenu mensuel, CV coûts variables, CF charges fixes, D amortissement mensuel.',
+   278→  },
+   279→  bmcFinance: {
+   280→    def: 'Cette annexe traduit chaque bloc du BMC en données financières : à chaque segment et proposition de valeur correspondent des quantités vendues et un revenu mensuel ; à chaque activité et ressource correspond un poste de coût. Elle confirme que le BMC est un système économique mesurable, non un simple poster.',
+   281→    short: 'Chaque bloc du BMC a sa traduction financière : revenus contre coûts, mensuels et annuels.',
+   282→    formulas: [
+   283→      { label: 'Coût total mensuel', expr: 'CT = CV + CF + D' },
+   284→      { label: 'Résultat mensuel', expr: 'R = CA − CT' },
+   285→    ],
+   286→  },
+   287→  indicators: {
+   288→    def: 'Le tableau d’indicateurs traduit les chiffres bruts en lecture normative : chaque indicateur est comparé à des seuils (bon / moyen / faible) pour donner au porteur et au comité une vision immédiate des forces, des risques et des priorités. Le ROI mesure le rendement de chaque dinar investi ; le payback mesure la vitesse de récupération du financement, dotations incluses car ce sont des flux de trésorerie retenus.',
+   289→    short: 'Chaque indicateur est comparé à des seuils : bon, moyen, faible — pour une lecture et une décision claires.',
+   290→    formulas: [
+   291→      { label: 'Retour sur investissement', expr: 'ROI = RN (an 1) ÷ Financement × 100' },
+   292→      { label: 'Payback', expr: 'Payback = Financement ÷ (RN + Dotations)' },
+   293→      { label: 'Taux de valeur ajoutée', expr: 'VA ÷ CA' },
+   294→      { label: 'Taux d’EBE', expr: 'EBE ÷ CA' },
+   295→      { label: 'Taux de marge sur coûts variables', expr: '(CA − CV) ÷ CA' },
+   296→    ],
+   297→  },
+   298→};
+   299→
+   300→const en: Record<DocKey, AnnexDoc> = {
+   301→  unitEconomics: {
+   302→    def: 'This section presents the unit economics of each product or service. The unit margin is the difference between the unit selling price and the unit variable cost: it is what each sold unit contributes toward fixed costs and then profit. A zero or negative unit margin means higher volumes amplify losses instead of profits.',
+   303→    short: 'Unit margin = selling price − variable cost; all monthly results build upon it.',
+   304→    formulas: [
+   305→      { label: 'Unit margin', expr: 'M = P − VC' },
+   306→      { label: 'Monthly revenue', expr: 'Rev = P × Q' },
+   307→      { label: 'Monthly margin', expr: 'Margin = M × Q' },
+   308→      { label: 'Margin rate', expr: 'Rate = (P − VC) ÷ P × 100' },
+   309→    ],
+   310→    note: 'P unit price, VC unit variable cost, Q quantity sold per month.',
+   311→  },
+   312→  breakEven: {
+   313→    def: 'The break-even point is the activity level at which revenues cover all costs (fixed and variable), with neither profit nor loss. It is among the first items a committee examines: the earlier the break-even is reached, the lower the project’s exposure to risk. It is shown here in value, in quantity and in time (months).',
+   314→    short: 'Break-even: the sales level where all costs are covered — no profit, no loss.',
+   315→    formulas: [
+   316→      { label: 'Contribution margin', expr: 'CM = Rev − VC' },
+   317→      { label: 'CM rate', expr: 'CM rate = (Rev − VC) ÷ Rev' },
+   318→      { label: 'Break-even (value)', expr: 'BE = FC ÷ CM rate' },
+   319→      { label: 'Break-even (units)', expr: 'BE units = FC ÷ unit CM' },
+   320→      { label: 'Break-even (time)', expr: 'BE months = BE ÷ monthly Rev' },
+   321→    ],
+   322→    note: 'FC fixed monthly costs, VC variable costs, Rev monthly revenue, unit CM = price − unit variable cost.',
+   323→  },
+   324→  scenarios: {
+   325→    def: 'Revenue is projected over five years under three annual-growth scenarios: optimistic, realistic and prudent. The realistic scenario feeds the rest of the calculations; the spread between scenarios measures the project’s sensitivity and shows that profitability does not rest on a single optimistic assumption.',
+   326→    short: 'Revenue projected over 5 years under three scenarios: optimistic, realistic, prudent.',
+   327→    formulas: [
+   328→      { label: 'Revenue of year t', expr: 'Rev(t) = Rev(1) × (1 + g)^(t−1)' },
+   329→      { label: 'Compound annual growth', expr: 'CAGR = (Rev(5) ÷ Rev(1))^(1/4) − 1' },
+   330→    ],
+   331→    note: 'g assumed annual growth rate of quantities.',
+   332→  },
+   333→  detailedRevenue: {
+   334→    def: 'Yearly breakdown of realistic-scenario revenue into variable costs, gross margin and margin rate, to measure the activity’s capacity to generate the margin that will cover fixed costs. A rate below 20% calls for a pricing or cost-structure review.',
+   335→    short: 'Gross margin = revenue − variable costs; its rate measures coverage capacity.',
+   336→    formulas: [
+   337→      { label: 'Gross margin', expr: 'Gross margin = Rev − VC' },
+   338→      { label: 'Rate', expr: 'Rate = Gross margin ÷ Rev × 100' },
+   339→    ],
+   340→  },
+   341→  assets: {
+   342→    def: 'All initial investments are listed by nature and by Financial Accounting System (SCF) account, and depreciated straight-line over their estimated useful life. Depreciation is a computed, non-cash expense: it reduces taxable income without leaving the treasury.',
+   343→    short: 'Straight-line depreciation = value ÷ useful life; a non-cash accounting charge.',
+   344→    formulas: [
+   345→      { label: 'Annual depreciation (straight-line)', expr: 'Dotation = Value ÷ Life' },
+   346→      { label: 'Total investment', expr: 'I = Σ Values' },
+   347→      { label: 'Total annual depreciation', expr: 'Σ Dotations' },
+   348→    ],
+   349→    note: 'Usual lives: 1 year setup costs, 3 years software, 5 years IT & office equipment, 10 years machinery & equipment.',
+   350→  },
+   351→  financing: {
+   352→    def: 'This table compares the total funding need (investments + working capital) with the resources raised (personal contribution, grant, bank loan), revealing any funding gap to fix. Working capital is computed from the lowest expected cumulative treasury of year 1.',
+   353→    short: 'Need = investments + working capital; gap = need − funding raised.',
+   354→    formulas: [
+   355→      { label: 'Funding need', expr: 'Need = Investments + WC' },
+   356→      { label: 'Working capital', expr: 'WC = | min(0 ; Cumulative treasury) |' },
+   357→      { label: 'Funding gap', expr: 'Gap = Need − (Contribution + Grant + Loan)' },
+   358→    ],
+   359→  },
+   360→  loan: {
+   361→    def: 'Repayment schedule with constant annuities: the yearly payment is fixed, but its composition shifts — interest, computed on the remaining balance, decreases year after year while the repaid principal share grows.',
+   362→    short: 'The constant annuity splits into interest on the balance and repaid principal.',
+   363→    formulas: [
+   364→      { label: 'Constant annual payment', expr: 'A = C × i ÷ (1 − (1 + i)^−n)' },
+   365→      { label: 'Interest of year y', expr: 'Int(y) = Balance(y−1) × i' },
+   366→      { label: 'Repaid principal', expr: 'Principal(y) = A − Int(y)' },
+   367→      { label: 'Monthly instalment', expr: 'Monthly = A ÷ 12' },
+   368→    ],
+   369→    note: 'C loan amount, i annual rate, n duration in years.',
+   370→  },
+   371→  cashflow: {
+   372→    def: 'Monthly treasury plan for year 1: each month confronts expected collections with disbursements (variable costs, fixed costs, loan instalment), the cumulative balance being carried forward from a starting balance (funding − investments − pre-start costs). Treasury is the first cause of project failure; this table is therefore the most closely examined.',
+   373→    short: 'Monthly balance = collections − disbursements, with the cumulative carried forward.',
+   374→    formulas: [
+   375→      { label: 'Monthly disbursements', expr: 'Disb. = VC + FC + Instalment' },
+   376→      { label: 'Monthly balance', expr: 'Balance(m) = Collections(m) − Disb.(m)' },
+   377→      { label: 'Cumulative balance', expr: 'Cumul(m) = Cumul(m−1) + Balance(m)' },
+   378→      { label: 'Starting balance', expr: 'Cumul(0) = Funding − Invest. − Pre-start' },
+   379→    ],
+   380→    note: 'Depreciation does not enter the treasury plan: it is not a cash flow.',
+   381→  },
+   382→  cashGap: {
+   383→    def: 'This table identifies the months where the cumulative balance falls below zero, the lowest treasury point, and therefore the minimum cash coverage required to secure liquidity through year 1. A positive year-end balance does not offset a deficit in the early months.',
+   384→    short: 'Required coverage = absolute value of the lowest cumulative treasury over 12 months.',
+   385→    formulas: [
+   386→      { label: 'Minimum treasury', expr: 'Treasury min = min (Cumul)' },
+   387→      { label: 'Required coverage', expr: 'Coverage = | min(0 ; Cumul) |' },
+   388→    ],
+   389→  },
+   390→  tax: {
+   391→    def: 'Five-year simulation of the tax burden under current Algerian rules: IFU (levied on revenue) while revenue stays under 30 M DZD (5% trade and production, 12% services, 10% mixed), then corporate profit tax IBS (19% production, 23% mixed, 26% services), accounting for exemption years based on the legal form and the startup label.',
+   392→    short: 'IFU on revenue up to 30 M DZD, then IBS on profit (19/23/26%).',
+   393→    formulas: [
+   394→      { label: 'Lump-sum tax', expr: 'IFU = Rev × Rate (5% / 10% / 12%)' },
+   395→      { label: 'Corporate profit tax', expr: 'IBS = Pre-tax result × (19% / 23% / 26%)' },
+   396→      { label: 'Net result', expr: 'Net = Pre-tax result − Tax' },
+   397→    ],
+   398→    note: 'Educational simulation; to be validated with a certified accountant.',
+   399→  },
+   400→  scf: {
+   401→    def: 'Income statement under the Algerian Financial Accounting System (SCF) over five years: from revenue, intermediate consumptions are deducted to reach value added, then personnel charges to reach gross operating surplus (EBE), then depreciation for operating result, finally tax for net result. Account numbering (70, 60-62, 63-64, 68, 69) follows the national chart of accounts.',
+   402→    short: 'From revenue to net result: value added, EBE, operating result, tax.',
+   403→    formulas: [
+   404→      { label: 'Value added', expr: 'VA = 70 − (60 + 61 + 62)' },
+   405→      { label: 'Gross operating surplus', expr: 'EBE = VA − (63 + 64)' },
+   406→      { label: 'Operating result', expr: 'RE = EBE − 68' },
+   407→      { label: 'Net result', expr: 'RN = RE − 69' },
+   408→    ],
+   409→    note: '70: revenue — 60/61/62: intermediate consumptions — 63/64: personnel — 68: depreciation — 69: taxes.',
+   410→  },
+   411→  bmc: {
+   412→    def: 'The Business Model Canvas (BMC) is a strategic matrix of nine interdependent blocks summarizing how value is created, delivered and captured: partners, activities, resources, value proposition, customer relations, channels, segments, cost structure and revenue streams. Any change in one block cascades into the financial translation detailed in the next appendix.',
+   413→    short: 'Nine blocks linking the value proposition to the market and to financial balance.',
+   414→    formulas: [
+   415→      { label: 'Monthly pre-tax result', expr: 'R = Rev − (VC + FC + D)' },
+   416→    ],
+   417→    note: 'Rev monthly revenue, VC variable costs, FC fixed costs, D monthly depreciation.',
+   418→  },
+   419→  bmcFinance: {
+   420→    def: 'This appendix translates each BMC block into direct financial figures: every segment and value proposition maps to sold quantities and monthly revenue; every activity and resource maps to a cost line. It confirms the BMC is a measurable economic system, not a marketing poster.',
+   421→    short: 'Every BMC block has a financial translation: revenues against costs, monthly and yearly.',
+   422→    formulas: [
+   423→      { label: 'Total monthly cost', expr: 'CT = VC + FC + D' },
+   424→      { label: 'Monthly result', expr: 'R = Rev − CT' },
+   425→    ],
+   426→  },
+   427→  indicators: {
+   428→    def: 'The dashboard turns raw numbers into a normative reading: each indicator is compared against reference thresholds (good / mid / weak), giving the founder and the committee an immediate view of strengths, risks and priorities. ROI measures the return on each dinar funded; payback measures how fast the project recovers its funding, depreciation included as it is retained cash flow.',
+   429→    short: 'Each indicator is compared to thresholds — good, mid, weak — for a clear reading and decision.',
+   430→    formulas: [
+   431→      { label: 'Return on investment', expr: 'ROI = Net result (Y1) ÷ Funding × 100' },
+   432→      { label: 'Payback period', expr: 'Payback = Funding ÷ (Net + Dotations)' },
+   433→      { label: 'Value-added rate', expr: 'VA ÷ Rev' },
+   434→      { label: 'EBE rate', expr: 'EBE ÷ Rev' },
+   435→      { label: 'Contribution margin rate', expr: '(Rev − VC) ÷ Rev' },
+   436→    ],
+   437→  },
+   438→};
+   439→
+   440→export const ANNEX_DOCS: Record<Lang, Record<DocKey, AnnexDoc>> = { ar, fr, en };
+   441→
+   442→export function getDoc(lang: Lang, k: DocKey): AnnexDoc {
+   443→  return (ANNEX_DOCS[lang] || ANNEX_DOCS.ar)[k];
+   444→}
+   445→
+   446→/** Header label of the definition card. */
+   447→export const DOC_LABEL: Record<Lang, string> = {
+   448→  ar: 'الإطار المرجعي — التعريف والمعادلات',
+   449→  fr: 'Cadre de référence — définition et formules',
+   450→  en: 'Reference frame — definition & formulas',
+   451→};
+   452→

@@ -1,0 +1,517 @@
+     1→'use client';
+     2→// ─── Pitch deck v2: 14 data-rich slides (print→PDF 16:9 + PPTX) ───────────────
+     3→import React, { useEffect, useMemo, useState } from 'react';
+     4→import { useApp } from './app-context';
+     5→import { Project } from '@/lib/types';
+     6→import { computeSnapshot, getStartupBudget, buildScfYear } from '@/lib/engine';
+     7→import { matchPrograms } from '@/lib/knowledge';
+     8→import { money as fmtMoney, fmtDate } from '@/lib/format';
+     9→import { generatePptx } from '@/lib/pptx';
+    10→import { getX } from '@/lib/i18n2';
+    11→import { getDoc, DocKey } from '@/lib/annex-docs';
+    12→import { countPdf, countPptx } from '@/lib/stats';
+    13→import { completeness } from '@/lib/analytics';
+    14→import { LineChartSvg, BarChartSvg } from './bmc-ui';
+    15→import { Button } from '@/components/ui/button';
+    16→import { useToast } from '@/hooks/use-toast';
+    17→import { ArrowLeft, Printer, FileDown, Loader2 } from 'lucide-react';
+    18→
+    19→const SWOT_STYLES = {
+    20→  s: { head: '#3E7C59', bg: '#E7F2EB', border: '#C6DFD0' },
+    21→  w: { head: '#AC4F46', bg: '#F7E7E5', border: '#E8C7C3' },
+    22→  o: { head: '#2E5E73', bg: '#EAF0F5', border: '#C9DAE5' },
+    23→  t: { head: '#96691F', bg: '#F6EFDD', border: '#E5D5AE' },
+    24→};
+    25→
+    26→export function DeckView({ p, onBack }: { p: Project; onBack: () => void }) {
+    27→  const { t, lang, branding } = useApp();
+    28→  const x = getX(lang);
+    29→  const money = (n: number) => fmtMoney(n, lang);
+    30→  const md = (n: number) => n >= 1e6 ? `${(n / 1e6).toLocaleString('fr-DZ', { maximumFractionDigits: 1 })} ${x.dMd}` : money(n);
+    31→  const snap = useMemo(() => computeSnapshot(p), [p]);
+    32→  const budget = getStartupBudget(p);
+    33→  const need = snap.assets.invest + budget.workingCapital;
+    34→  const comp = useMemo(() => completeness(p), [p]);
+    35→  const years = useMemo(() => [1, 2, 3, 4, 5].map(y => {
+    36→    const s = buildScfYear(p, y, p.market.growthReal / 100);
+    37→    return { y, rev: s.rev, net: s.net, ebe: s.ebe, va: s.va };
+    38→  }), [p]);
+    39→  const { toast } = useToast();
+    40→  const [busy, setBusy] = useState(false);
+    41→
+    42→  // inject 16:9 @page while deck is mounted
+    43→  useEffect(() => {
+    44→    document.body.classList.add('deck-mode');
+    45→    const style = document.createElement('style');
+    46→    style.id = 'deck-page-style';
+    47→    style.textContent = '@media print { @page { size: 297mm 166mm; margin: 0; } }';
+    48→    document.head.appendChild(style);
+    49→    return () => {
+    50→      document.body.classList.remove('deck-mode');
+    51→      document.getElementById('deck-page-style')?.remove();
+    52→    };
+    53→  }, []);
+    54→
+    55→  const orgName = branding.orgName || t.appName;
+    56→  const primary = branding.primary || '#2E5E73';
+    57→  const projectName = p.info.projectTitleAr || p.name || t.untitled;
+    58→  const lines = (v?: string) => (v || '').split('\n').map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
+    59→  const programs = useMemo(() => matchPrograms(p).filter(pr => pr.fit !== 'low').slice(0, 3), [p]);
+    60→  const legalLabel = { micro: t.legalMicro, startup: t.legalStartup, patent: t.legalPatent, other: t.legalOther }[p.info.legal];
+    61→  const typeLabels = { service: t.tService, industrial: t.tIndustrial, commercial: t.tCommercial, digital: t.tDigital };
+    62→  const totalBuyers = p.market.personas.reduce((s, pe) => s + (pe.monthlyBuyers || 0), 0);
+    63→  const marginRate = snap.base.rev > 0 ? (snap.base.rev - snap.base.varCost) / snap.base.rev : 0;
+    64→  const cum = snap.cashRows.map(r => r.cumulative);
+    65→  const cashGap = Math.max(0, Math.abs(Math.min(...cum, 0)));
+    66→  const yearLabels = ['Y1', 'Y2', 'Y3', 'Y4', 'Y5'].map((l, i) => lang === 'ar' ? `س${i + 1}` : lang === 'fr' ? `A${i + 1}` : l);
+    67→
+    68→  const doPptx = async () => {
+    69→    setBusy(true);
+    70→    try {
+    71→      await generatePptx(p, lang, branding);
+    72→      countPptx();
+    73→      toast({ description: t.saved });
+    74→    } catch {
+    75→      toast({ description: t.importError, variant: 'destructive' });
+    76→    } finally {
+    77→      setBusy(false);
+    78→    }
+    79→  };
+    80→
+    81→  const TOTAL = 14;
+    82→  const Slide = ({ n, title, children, dark = false }: { n: string; title?: string; children: React.ReactNode; dark?: boolean }) => (
+    83→    <div className={`deck-slide mx-auto flex flex-col ${dark ? 'deck-cover' : ''}`} style={{ ['--deck-primary' as string]: primary, background: dark ? undefined : '#fff', color: dark ? '#FFFFFF' : '#22313A' }}>
+    84→      {!dark && <div className="h-2.5 w-full shrink-0" style={{ background: `linear-gradient(90deg, ${primary}, ${primary}88)` }} />}
+    85→      <div className="flex flex-1 flex-col px-[12mm] py-[8mm]">
+    86→        {title && (
+    87→          <div className="flex items-end justify-between gap-4">
+    88→            <h2 className="text-[25px] font-extrabold font-heading leading-snug" style={{ color: dark ? '#fff' : primary }}>{title}</h2>
+    89→            <div className="h-1.5 w-16 shrink-0 rounded-full" style={{ background: dark ? '#ffffff66' : '#C99A3C' }} />
+    90→          </div>
+    91→        )}
+    92→        <div className="mt-3.5 flex-1 text-[14px] leading-relaxed">{children}</div>
+    93→        <div className={`flex items-center justify-between border-t pt-2 text-[9.5px] ${dark ? 'border-white/20 text-white/70' : 'border-[#E2E9EE] text-[#8FA0AD]'}`}>
+    94→          <span>{orgName}{branding.tagline ? ` — ${branding.tagline}` : ''}</span>
+    95→          <span className="num">{t.slideOf} {n} / {TOTAL}</span>
+    96→        </div>
+    97→      </div>
+    98→    </div>
+    99→  );
+   100→
+   101→  const Bullets = ({ items, tone, size = 14 }: { items: string[]; tone?: string; size?: number }) => (
+   102→    <ul className="space-y-1.5 ps-5" style={tone ? { color: tone } : undefined}>
+   103→      {items.filter(Boolean).map((s, i) => <li key={i} style={{ fontSize: size }}>{s}</li>)}
+   104→    </ul>
+   105→  );
+   106→
+   107→  const InfoTile = ({ k, v, accent = false }: { k: string; v: string; accent?: boolean }) => (
+   108→    <div className="rounded-xl border p-3" style={{ borderColor: accent ? `${primary}55` : '#E2E9EE', background: accent ? `${primary}0d` : '#FBFDFE' }}>
+   109→      <div className="text-[10px] font-bold uppercase tracking-wide text-[#8FA0AD]">{k}</div>
+   110→      <div className="mt-1 truncate text-[13.5px] font-bold" style={{ color: accent ? primary : '#22313A' }} title={v}><bdi>{v || t.na}</bdi></div>
+   111→    </div>
+   112→  );
+   113→
+   114→  const KpiTile = ({ k, v, sub, color }: { k: string; v: string; sub?: string; color?: string }) => (
+   115→    <div className="rounded-2xl border p-3.5" style={{ borderColor: '#E2E9EE', background: '#F7FAFB' }}>
+   116→      <div className="text-[10.5px] font-semibold text-[#8FA0AD]">{k}</div>
+   117→      <div className="mt-1 text-[19px] font-black font-heading num" style={{ color: color || primary }}>{v}</div>
+   118→      {sub && <div className="mt-0.5 text-[10px] text-[#8FA0AD]">{sub}</div>}
+   119→    </div>
+   120→  );
+   121→
+   122→  /** Compact reference note: one-line definition + key formulas (official-report touch). */
+   123→  const SlideNote = ({ k }: { k: DocKey }) => {
+   124→    const d = getDoc(lang, k);
+   125→    return (
+   126→      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-dashed border-[#C9DAE5] bg-[#F7FAFB] px-3 py-1.5 text-[10.5px] leading-relaxed text-[#5E7180] print:break-inside-avoid">
+   127→        <span className="font-bold text-[#2E5E73]">{x.dDocLabel}:</span>
+   128→        <span>{d.short}</span>
+   129→        {d.formulas.slice(0, 2).map((f, i) => (
+   130→          <code key={i} dir="ltr" className="rounded border border-[#DCE6EC] bg-white px-1.5 py-0.5 text-[10px] tracking-tight text-[#22313A]">{f.expr}</code>
+   131→        ))}
+   132→      </div>
+   133→    );
+   134→  };
+   135→
+   136→  const SwotQuadrant = ({ q, label, items }: { q: keyof typeof SWOT_STYLES; label: string; items: string[] }) => {
+   137→    const st = SWOT_STYLES[q];
+   138→    return (
+   139→      <div className="rounded-xl border p-2.5" style={{ borderColor: st.border, background: st.bg }}>
+   140→        <div className="mb-1 flex items-center justify-between text-[11.5px] font-extrabold" style={{ color: st.head }}>
+   141→          <span>{label}</span>
+   142→          <span className="num rounded-full bg-white/70 px-1.5 text-[10px]">{items.length}</span>
+   143→        </div>
+   144→        {items.length ? (
+   145→          <ul className="space-y-0.5 ps-4 text-[10.5px] leading-snug text-[#3A4A56]">
+   146→            {items.slice(0, 4).map((s, i) => <li key={i} className="list-disc">{s}</li>)}
+   147→          </ul>
+   148→        ) : <div className="text-[10px] italic text-[#9AAAB6]">{x.dSwotEmpty}</div>}
+   149→      </div>
+   150→    );
+   151→  };
+   152→
+   153→  const tableCls = 'fin-table w-full';
+   154→
+   155→  const printDeck = () => { countPdf(); window.print(); };
+   156→
+   157→  return (
+   158→    <div className="min-h-screen bg-secondary/70 pb-10">
+   159→      <div className="no-print sticky top-0 z-20 border-b border-border/70 bg-card/95 backdrop-blur">
+   160→        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-2.5">
+   161→          <Button size="sm" variant="ghost" className="gap-1" onClick={onBack}><ArrowLeft className="h-4 w-4" />{t.backToApp}</Button>
+   162→          <span className="text-[13px] font-semibold">{t.deckTitle}</span>
+   163→          <span className="hidden text-[12px] text-muted-foreground md:inline">— {t.deckDesc}</span>
+   164→          <div className="ms-auto flex gap-2">
+   165→            <Button size="sm" variant="outline" className="gap-1.5" onClick={printDeck}><Printer className="h-4 w-4" />{t.deckPdf}</Button>
+   166→            <Button size="sm" className="gap-1.5" onClick={doPptx} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}{t.deckPptx}</Button>
+   167→          </div>
+   168→        </div>
+   169→      </div>
+   170→
+   171→      <div className="mx-auto mt-6 max-w-5xl space-y-6 overflow-x-auto px-4 print:space-y-0 print:overflow-visible print:px-0">
+   172→        {/* ── 1 · Cover ── */}
+   173→        <Slide n="1" dark>
+   174→          <div className="relative flex h-full flex-col items-center justify-center text-center">
+   175→            <div className="absolute -top-10 -end-10 h-52 w-52 rounded-full bg-white/5" aria-hidden />
+   176→            <div className="absolute -bottom-14 -start-8 h-64 w-64 rounded-full bg-white/5" aria-hidden />
+   177→            {branding.logo && <img src={branding.logo} alt={orgName} className="mb-3 h-14 w-auto rounded-lg bg-white/95 p-1.5" />}
+   178→            <span className="rounded-full border border-white/30 bg-white/10 px-4 py-1 text-[11.5px] font-bold tracking-wide">{x.dBadge}</span>
+   179→            <h1 className="mt-5 text-[38px] font-black font-heading leading-tight">{projectName}</h1>
+   180→            {p.info.projectTitleEn && <div className="mt-1.5 text-[16px] text-white/85">{p.info.projectTitleEn}</div>}
+   181→            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-white/90">
+   182→              {[p.info.ownerName, p.info.wilaya, p.info.incubator || orgName, p.info.preparedDate || fmtDate(Date.now(), lang)].filter(Boolean).map((s, i) => (
+   183→                <span key={i} className="rounded-full bg-white/10 px-3 py-1">{s}</span>
+   184→              ))}
+   185→            </div>
+   186→            <div className="mt-6 flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-5 py-2.5">
+   187→              <span className="text-[11px] font-semibold text-white/80">{x.dScore}</span>
+   188→              <span className="num text-[22px] font-black">{snap.score.toFixed(1)}</span>
+   189→              <span className="num text-[12px] text-white/75">/ 10</span>
+   190→            </div>
+   191→            <div className="mt-5 text-[10.5px] font-semibold text-white/60">{x.dToolCredits}</div>
+   192→          </div>
+   193→        </Slide>
+   194→
+   195→        {/* ── 2 · Project card ── */}
+   196→        <Slide n="2" title={`${x.dCardT} — ${x.dCardD}`}>
+   197→          <div className="grid grid-cols-3 gap-2.5">
+   198→            <InfoTile k={t.tradeName} v={p.info.tradeName} accent />
+   199→            <InfoTile k={x.dLegal} v={legalLabel} accent />
+   200→            <InfoTile k={t.ownerName} v={p.info.ownerName} />
+   201→            <InfoTile k={t.wilaya} v={p.info.wilaya} />
+   202→            <InfoTile k={t.phone} v={p.info.phone} />
+   203→            <InfoTile k={x.dDate} v={p.info.preparedDate || fmtDate(Date.now(), lang)} />
+   204→          </div>
+   205→          <div className="mt-3 flex flex-wrap gap-1.5">
+   206→            {p.type.types.map(tp => (
+   207→              <span key={tp} className="rounded-full px-3 py-1 text-[11px] font-bold" style={{ background: `${primary}14`, color: primary }}>{typeLabels[tp]}</span>
+   208→            ))}
+   209→          </div>
+   210→          <p className="mt-3 rounded-xl border border-[#E2E9EE] bg-[#FBFDFE] p-3 text-[13px] leading-relaxed">{p.info.description || t.na}</p>
+   211→          <div className="mt-3 flex items-center gap-3 rounded-xl border border-[#E2E9EE] p-2.5">
+   212→            <div className="w-40 shrink-0">
+   213→              <div className="flex justify-between text-[10px] text-[#8FA0AD]"><span>{x.dCompletion}</span><span className="num font-bold">{comp.percent}%</span></div>
+   214→              <div className="mt-1 h-2 rounded-full bg-[#EAF0F3]"><div className="h-2 rounded-full" style={{ width: `${comp.percent}%`, background: comp.percent >= 80 ? '#3E7C59' : '#C99A3C' }} /></div>
+   215→            </div>
+   216→            <InfoTile k={t.fiscalNature} v={{ commercial: t.faCommercial, services: t.faServices, production: t.faProduction, mixed: t.faMixed }[p.type.fiscalActivity]} />
+   217→          </div>
+   218→        </Slide>
+   219→
+   220→        {/* ── 3 · Problem ── */}
+   221→        <Slide n="3" title={`${t.dProblem} — ${t.dProblemT}`}>
+   222→          <div className="grid gap-4 md:grid-cols-[1.1fr_1fr]">
+   223→            <div>
+   224→              <p className="text-[15px] leading-relaxed">{p.info.description || t.na}</p>
+   225→              <div className="mt-4"><Bullets items={lines(p.market.customers)} tone="#4A5B68" /></div>
+   226→            </div>
+   227→            <div className="grid content-start gap-2">
+   228→              <div className="text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{lang === 'ar' ? 'شرائح العملاء المستهدفة' : lang === 'fr' ? 'Segments cibles' : 'Target segments'}</div>
+   229→              {lines(p.market.customers).slice(0, 3).map((c, i) => (
+   230→                <div key={i} className="rounded-xl border border-[#E2E9EE] bg-[#FBFDFE] p-3 text-[12.5px] font-semibold">{c}</div>
+   231→              ))}
+   232→              {lines(p.market.customers).length === 0 && <div className="text-[12px] text-[#9AAAB6]">{t.na}</div>}
+   233→            </div>
+   234→          </div>
+   235→        </Slide>
+   236→
+   237→        {/* ── 4 · Solution ── */}
+   238→        <Slide n="4" title={`${t.dSolution} — ${t.dSolutionT}`}>
+   239→          <div className="grid gap-2.5 md:grid-cols-2">
+   240→            {lines(p.market.valueProp).map((v, i) => (
+   241→              <div key={i} className="flex items-start gap-2.5 rounded-xl border p-3" style={{ borderColor: '#C6DFD0', background: '#E7F2EB' }}>
+   242→                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#3E7C59] text-[10px] font-black text-white">✓</span>
+   243→                <span className="text-[13px] font-semibold leading-snug">{v}</span>
+   244→              </div>
+   245→            ))}
+   246→            {lines(p.market.valueProp).length === 0 && <div className="text-[12px] text-[#9AAAB6]">{t.na}</div>}
+   247→          </div>
+   248→          <div className="mt-4 rounded-xl border border-[#E2E9EE] p-3">
+   249→            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{t.dBmc} · {t.bmcBlocks[1]}</div>
+   250→            <Bullets items={lines(p.market.activities)} tone="#4A5B68" size={12.5} />
+   251→          </div>
+   252→        </Slide>
+   253→
+   254→        {/* ── 5 · Market ── */}
+   255→        <Slide n="5" title={`${t.dMarket} — ${t.dMarketT}`}>
+   256→          <div className="grid gap-4 md:grid-cols-[1fr_1.3fr]">
+   257→            <div>
+   258→              <Bullets items={lines(p.market.customers).slice(0, 4)} tone="#3A4A56" size={13} />
+   259→              <div className="mt-4 rounded-2xl border p-3.5 text-center" style={{ borderColor: `${primary}44`, background: `${primary}0d` }}>
+   260→                <div className="text-[10.5px] font-bold text-[#8FA0AD]">{x.dBuyers}</div>
+   261→                <div className="num mt-1 text-[26px] font-black" style={{ color: primary }}>{totalBuyers.toLocaleString('fr-DZ')}</div>
+   262→                <div className="text-[10px] text-[#8FA0AD]">{x.dMargin}: <strong className="num">{(marginRate * 100).toFixed(0)}%</strong></div>
+   263→              </div>
+   264→            </div>
+   265→            <div>
+   266→              {p.market.personas.length > 0 ? (
+   267→                <table className={tableCls}>
+   268→                  <thead><tr><th>{t.peName}</th><th>{t.peAge}</th><th>{t.peLocation}</th><th>{t.peMonthly}</th></tr></thead>
+   269→                  <tbody>
+   270→                    {p.market.personas.slice(0, 5).map(pe => (
+   271→                      <tr key={pe.id}><td className="font-semibold">{pe.name}</td><td>{pe.ageRange}</td><td>{pe.location}</td><td className="num">{pe.monthlyBuyers.toLocaleString('fr-DZ')}</td></tr>
+   272→                    ))}
+   273→                  </tbody>
+   274→                </table>
+   275→              ) : <div className="rounded-xl border border-dashed p-6 text-center text-[12px] text-[#9AAAB6]">{t.personaNo}</div>}
+   276→            </div>
+   277→          </div>
+   278→        </Slide>
+   279→
+   280→        {/* ── 6 · Competitors & SWOT ── */}
+   281→        <Slide n="6" title={`${x.dCompSwot} — ${x.dCompSwotT}`}>
+   282→          {p.market.competitors.length > 0 ? (
+   283→            <table className={tableCls}>
+   284→              <thead><tr><th>{t.compName}</th><th>{t.compOffer}</th><th>{t.compPrice}</th><th>{t.compEdge}</th></tr></thead>
+   285→              <tbody>
+   286→                {p.market.competitors.slice(0, 3).map(cp => (
+   287→                  <tr key={cp.id}>
+   288→                    <td className="font-semibold">{cp.name}</td><td>{cp.offer}</td>
+   289→                    <td>{{ low: t.priceLow, mid: t.priceMid, high: t.priceHigh }[cp.priceLevel] || cp.priceLevel}</td>
+   290→                    <td>{cp.edge}</td>
+   291→                  </tr>
+   292→                ))}
+   293→              </tbody>
+   294→            </table>
+   295→          ) : <div className="rounded-xl border border-dashed p-3 text-center text-[12px] text-[#9AAAB6]">{x.dCompEmpty}</div>}
+   296→          <div className="mt-3 grid grid-cols-2 gap-2.5">
+   297→            <SwotQuadrant q="s" label={t.swotS} items={p.market.swot.strengths} />
+   298→            <SwotQuadrant q="w" label={t.swotW} items={p.market.swot.weaknesses} />
+   299→            <SwotQuadrant q="o" label={t.swotO} items={p.market.swot.opportunities} />
+   300→            <SwotQuadrant q="t" label={t.swotT} items={p.market.swot.threats} />
+   301→          </div>
+   302→        </Slide>
+   303→
+   304→        {/* ── 7 · BMC ── */}
+   305→        <Slide n="7" title={`${t.dBmc} — ${t.dBmcT}`}>
+   306→          <div className="bmc-grid text-[11px]" style={{ fontSize: '10.5px' }}>
+   307→            <div className="bmc-cell bmc-partners"><strong>{t.bmcBlocks[0]}</strong>{lines(p.market.partners).slice(0, 4).join('\n') || t.na}</div>
+   308→            <div className="bmc-cell bmc-activities"><strong>{t.bmcBlocks[1]}</strong>{lines(p.market.activities).slice(0, 2).join('\n') || t.na}</div>
+   309→            <div className="bmc-cell bmc-resources"><strong>{t.bmcBlocks[2]}</strong>{lines(p.market.partners).slice(0, 2).join('\n') || t.na}</div>
+   310→            <div className="bmc-cell bmc-value"><strong>{t.bmcBlocks[3]}</strong>{lines(p.market.valueProp).slice(0, 4).join('\n') || t.na}</div>
+   311→            <div className="bmc-cell bmc-relations"><strong>{t.bmcBlocks[4]}</strong>{lines(p.market.channels).slice(0, 2).join('\n') || t.na}</div>
+   312→            <div className="bmc-cell bmc-channels"><strong>{t.bmcBlocks[5]}</strong>{lines(p.market.channels).slice(0, 2).join('\n') || t.na}</div>
+   313→            <div className="bmc-cell bmc-customers"><strong>{t.bmcBlocks[6]}</strong>{lines(p.market.customers).slice(0, 4).join('\n') || t.na}</div>
+   314→            <div className="bmc-cell bmc-costs"><strong>{t.bmcBlocks[7]}</strong>{money(snap.fixed)} / {t.monthUnit}</div>
+   315→            <div className="bmc-cell bmc-revenue"><strong>{t.bmcBlocks[8]}</strong>{money(snap.base.rev)} / {t.monthUnit}</div>
+   316→          </div>
+   317→          <div className="mt-2 text-center text-[10px] italic text-[#9AAAB6]">{x.dBmcHint}</div>
+   318→        </Slide>
+   319→
+   320→        {/* ── 8 · Revenue model ── */}
+   321→        <Slide n="8" title={`${t.dModel} — ${t.dModelT}`}>
+   322→          <table className={tableCls}>
+   323→            <thead><tr><th>{t.productName}</th><th>{t.revenueModel}</th><th>{t.pPrice}</th><th>{t.pQty}</th><th>{t.ueMonthlyRev}</th><th>{t.ueMonthlyMargin}</th></tr></thead>
+   324→            <tbody>
+   325→              {p.products.filter(z => z.name).map(z => {
+   326→                const rev = z.model === 'fixed' ? z.price * z.qty : z.model === 'commission' ? z.deal * (z.commission / 100) * z.deals : z.sub * z.subs;
+   327→                const marg = z.model === 'fixed' ? (z.price - z.variable) * z.qty : z.model === 'commission' ? (z.deal * z.commission / 100 - z.dealCost) * z.deals : (z.sub - z.subCost) * z.subs;
+   328→                return (
+   329→                  <tr key={z.id}>
+   330→                    <td className="font-semibold">{z.name}</td>
+   331→                    <td>{{ fixed: t.rmFixed, commission: t.rmCommission, subscription: t.rmSubscription }[z.model]}</td>
+   332→                    <td>{money(z.model === 'fixed' ? z.price : z.model === 'commission' ? z.deal * z.commission / 100 : z.sub)}</td>
+   333→                    <td className="num">{Math.round(z.model === 'fixed' ? z.qty : z.model === 'commission' ? z.deals : z.subs).toLocaleString('fr-DZ')}</td>
+   334→                    <td>{money(rev)}</td>
+   335→                    <td className={marg >= 0 ? 'positive' : 'negative'}>{money(marg)}</td>
+   336→                  </tr>
+   337→                );
+   338→              })}
+   339→              <tr className="total-row"><td colSpan={4}>{t.total}</td><td>{money(snap.base.rev)}</td><td>{money(snap.base.rev - snap.base.varCost)}</td></tr>
+   340→            </tbody>
+   341→          </table>
+   342→          <div className="mt-3 grid grid-cols-3 gap-2.5">
+   343→            <KpiTile k={x.dMargin} v={`${(marginRate * 100).toFixed(0)}%`} color={marginRate >= 0.3 ? '#3E7C59' : '#96691F'} />
+   344→            <KpiTile k={t.fixedMonthlyTotal} v={money(snap.fixed)} />
+   345→            <KpiTile k={t.kpiNetMonthly} v={money(snap.netMonthly)} color={snap.netMonthly >= 0 ? '#3E7C59' : '#AC4F46'} />
+   346→          </div>
+   347→          <SlideNote k="unitEconomics" />
+   348→        </Slide>
+   349→
+   350→        {/* ── 9 · Numbers ── */}
+   351→        <Slide n="9" title={`${t.dNumbers} — ${t.dNumbersT}`}>
+   352→          <div className="grid grid-cols-3 gap-3">
+   353→            <KpiTile k={t.kpiMonthlyRev} v={money(snap.base.rev)} />
+   354→            <KpiTile k={t.kpiNetMonthly} v={money(snap.netMonthly)} color={snap.netMonthly >= 0 ? '#3E7C59' : '#AC4F46'} />
+   355→            <KpiTile k={t.kpiFixed} v={money(snap.fixed)} />
+   356→            <KpiTile k={t.kpiBreakEven} v={snap.be.breakEvenMonths > 0 ? `${snap.be.breakEvenMonths.toFixed(1)} ${t.monthUnit}` : t.na} />
+   357→            <KpiTile k={t.kpiBudget} v={money(budget.total)} />
+   358→            <KpiTile k={t.kpiScore} v={`${snap.score.toFixed(1)}/10`} color="#C99A3C" />
+   359→          </div>
+   360→          <div className="mt-4 grid grid-cols-2 gap-3">
+   361→            <div className="rounded-xl border border-[#E2E9EE] bg-[#FBFDFE] p-3 text-[12.5px]">
+   362→              <span className="font-bold" style={{ color: primary }}>{x.dTaxLine}:</span>{' '}
+   363→              {{ ifu: 'IFU', ibsReal: 'IBS', exemptManual: t.trExemptManual, exemptStartup: t.trExemptStartup, exemptPatent: t.trExemptPatent }[snap.taxY1.regime]}
+   364→              {snap.taxY1.regime !== 'exemptManual' && snap.taxY1.regime !== 'exemptStartup' && snap.taxY1.regime !== 'exemptPatent' && <span className="num"> — {(snap.taxY1.rate * 100).toFixed(0)}%</span>}
+   365→            </div>
+   366→            <div className="rounded-xl border border-[#E2E9EE] bg-[#FBFDFE] p-3 text-[12.5px]">
+   367→              <span className="font-bold" style={{ color: primary }}>{t.indVa}:</span> <span className="num">{money(snap.year1.va)}</span>
+   368→              <span className="mx-2 text-[#C9D6DE]">|</span>
+   369→              <span className="font-bold" style={{ color: primary }}>EBE:</span> <span className="num">{money(snap.year1.ebe)}</span>
+   370→            </div>
+   371→          </div>
+   372→          <SlideNote k="breakEven" />
+   373→        </Slide>
+   374→
+   375→        {/* ── 10 · Investment & financing ── */}
+   376→        <Slide n="10" title={`${x.dInvest} — ${x.dInvestT}`}>
+   377→          <div className="grid gap-4 md:grid-cols-2">
+   378→            <div>
+   379→              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{x.dAssetsHead}</div>
+   380→              <table className={tableCls}>
+   381→                <tbody>
+   382→                  {snap.assets.rows.slice(0, 5).map((r, i) => (
+   383→                    <tr key={i}><td className="font-semibold">{r.name}</td><td className="num text-end">{money(r.value)}</td></tr>
+   384→                  ))}
+   385→                  <tr className="total-row"><td>{x.dAssetsTotal}</td><td className="num text-end">{money(snap.assets.invest)}</td></tr>
+   386→                </tbody>
+   387→              </table>
+   388→              <div className="mt-2 space-y-1 text-[11.5px] text-[#4A5B68]">
+   389→                <div>{x.dWC}: <strong className="num">{money(budget.workingCapital)}</strong></div>
+   390→                <div>{x.dPreStart}: <strong className="num">{money(p.funding.preStartCosts)}</strong></div>
+   391→                <div className="font-bold" style={{ color: primary }}>{x.dNeed}: <span className="num">{money(need)}</span></div>
+   392→              </div>
+   393→            </div>
+   394→            <div>
+   395→              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{x.dFinStruct}</div>
+   396→              {(() => {
+   397→                const self = p.funding.selfFunding, grant = p.funding.grantAmount, loan = p.funding.hasLoan === 'yes' ? p.funding.loanAmount : 0;
+   398→                const tot = Math.max(self + grant + loan, 1);
+   399→                const bars: [string, number, string, string][] = [
+   400→                  [x.dSelf, self, '#3E7C59', money(self)],
+   401→                  [x.dGrant, grant, '#C99A3C', money(grant)],
+   402→                  [x.dLoan, loan, primary, money(loan)],
+   403→                ];
+   404→                return (
+   405→                  <div className="space-y-2.5">
+   406→                    {bars.map(([label, val, color, amount], i) => (
+   407→                      <div key={i}>
+   408→                        <div className="flex justify-between text-[11px] font-semibold"><span>{label}</span><span className="num">{amount} ({Math.round(val / tot * 100)}%)</span></div>
+   409→                        <div className="h-3.5 rounded-full bg-[#EAF0F3]"><div className="h-3.5 rounded-full" style={{ width: `${Math.max(2, val / tot * 100)}%`, background: color }} /></div>
+   410→                      </div>
+   411→                    ))}
+   412→                  </div>
+   413→                );
+   414→              })()}
+   415→              <div className={`mt-3 rounded-xl px-3 py-2 text-[12px] font-bold ${snap.financingGap <= 0 ? 'alert-calm alert-ok' : 'alert-calm alert-bad'}`}>
+   416→                {snap.financingGap <= 0 ? `✓ ${x.dGapOk}` : `⚠ ${x.dGapBad}: ${money(snap.financingGap)}`}
+   417→              </div>
+   418→              {programs.length > 0 && (
+   419→                <div className="mt-3">
+   420→                  <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{x.dPrograms}</div>
+   421→                  <div className="flex flex-wrap gap-1.5">
+   422→                    {programs.map(pr => (
+   423→                      <span key={pr.id} className="rounded-full border border-[#C9DAE5] bg-[#EAF0F5] px-3 py-1 text-[11px] font-bold" style={{ color: primary }}>{(t as unknown as Record<string, string>)[pr.nameKey]}</span>
+   424→                    ))}
+   425→                  </div>
+   426→                </div>
+   427→              )}
+   428→            </div>
+   429→          </div>
+   430→          <SlideNote k="financing" />
+   431→        </Slide>
+   432→
+   433→        {/* ── 11 · Treasury & break-even ── */}
+   434→        <Slide n="11" title={`${t.dBreakeven} — ${t.dBeT}`}>
+   435→          <div className="rounded-2xl border border-[#E2E9EE] bg-white p-3">
+   436→            <div className="mb-1 text-[11px] font-bold" style={{ color: primary }}>{x.dTreasury}</div>
+   437→            <LineChartSvg
+   438→              values={cum}
+   439→              labels={snap.cashRows.map(r => `${lang === 'ar' ? 'ش' : lang === 'fr' ? 'M' : 'M'}${r.m}`)}
+   440→              format={v => md(v)}
+   441→            />
+   442→          </div>
+   443→          <div className="mt-3 grid grid-cols-3 gap-3">
+   444→            <KpiTile k={t.indMinTreasury} v={money(snap.minCash)} color={snap.minCash >= 0 ? '#3E7C59' : '#AC4F46'} />
+   445→            <KpiTile k={t.kpiBreakEven} v={snap.be.breakEvenMonths > 0 ? `${snap.be.breakEvenMonths.toFixed(1)} ${t.monthUnit}` : t.na} />
+   446→            <KpiTile k={t.cashGapRows[4]} v={money(cashGap)} color={cashGap > 0 ? '#96691F' : '#3E7C59'} />
+   447→          </div>
+   448→          <SlideNote k="cashflow" />
+   449→        </Slide>
+   450→
+   451→        {/* ── 12 · 5-year growth ── */}
+   452→        <Slide n="12" title={`${x.dGrowth} — ${x.dGrowthT}`}>
+   453→          <div className="grid gap-3 md:grid-cols-2">
+   454→            <div className="rounded-2xl border border-[#E2E9EE] bg-white p-3">
+   455→              <div className="mb-1 text-[11px] font-bold" style={{ color: primary }}>{x.dRev5y}</div>
+   456→              <BarChartSvg data={years.map(yy => ({ label: yearLabels[yy.y - 1], value: yy.rev, color: primary }))} format={md} />
+   457→            </div>
+   458→            <div className="rounded-2xl border border-[#E2E9EE] bg-white p-3">
+   459→              <div className="mb-1 text-[11px] font-bold" style={{ color: '#3E7C59' }}>{x.dNet5y}</div>
+   460→              <BarChartSvg data={years.map(yy => ({ label: yearLabels[yy.y - 1], value: yy.net, color: yy.net >= 0 ? '#3E7C59' : '#AC4F46' }))} format={md} />
+   461→            </div>
+   462→          </div>
+   463→          <div className="mt-3 grid grid-cols-3 gap-3">
+   464→            <KpiTile k={`${t.indEbe} — ${yearLabels[2]}`} v={md(years[2].ebe)} />
+   465→            <KpiTile k={`${t.indVa} — ${yearLabels[2]}`} v={md(years[2].va)} />
+   466→            <KpiTile k={`${t.kpiNetMonthly} — ${yearLabels[4]}`} v={md(years[4].net)} color={years[4].net >= 0 ? '#3E7C59' : '#AC4F46'} />
+   467→          </div>
+   468→          <SlideNote k="scf" />
+   469→        </Slide>
+   470→
+   471→        {/* ── 13 · Team & contact ── */}
+   472→        <Slide n="13" title={`${t.dTeam} — ${t.dTeamT}`}>
+   473→          <div className="grid grid-cols-3 gap-2.5">
+   474→            <InfoTile k={t.ownerName} v={p.info.ownerName} accent />
+   475→            <InfoTile k={t.phone} v={p.info.phone} />
+   476→            <InfoTile k={t.wilaya} v={p.info.wilaya} />
+   477→            <InfoTile k={t.incubator} v={p.info.incubator || orgName} accent />
+   478→            <InfoTile k={x.dLegal} v={legalLabel} />
+   479→            <InfoTile k={x.dCompletion} v={`${comp.percent}%`} />
+   480→          </div>
+   481→          <div className="mt-4 grid gap-3 md:grid-cols-2">
+   482→            <div className="rounded-xl border border-[#E2E9EE] bg-[#FBFDFE] p-3.5">
+   483→              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#8FA0AD]">{t.tourCardTitle}</div>
+   484→              <Bullets items={lines(p.market.valueProp).slice(0, 3)} tone="#4A5B68" size={12.5} />
+   485→            </div>
+   486→            <div className="rounded-xl border p-3.5" style={{ borderColor: '#C9DAE5', background: '#EAF0F5' }}>
+   487→              <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: primary }}>{x.dContact}</div>
+   488→              <div className="space-y-1 text-[12.5px] text-[#3A4A56]">
+   489→                <div>{p.info.ownerName || t.na} — <bdi>{p.info.phone || t.na}</bdi></div>
+   490→                <div>{p.info.wilaya || t.na} · {p.info.incubator || orgName}</div>
+   491→                <div>{x.dDate}: {p.info.preparedDate || fmtDate(Date.now(), lang)}</div>
+   492→              </div>
+   493→            </div>
+   494→          </div>
+   495→        </Slide>
+   496→
+   497→        {/* ── 14 · Closing ── */}
+   498→        <Slide n="14" dark>
+   499→          <div className="relative flex h-full flex-col items-center justify-center text-center">
+   500→            <div className="absolute -top-10 -start-10 h-48 w-48 rounded-full bg-white/5" aria-hidden />
+   501→            <div className="text-[12px] font-bold uppercase tracking-widest text-white/70">{x.dClosingAsk}</div>
+   502→            <div className="num mt-2 text-[46px] font-black leading-none">{money(need)}</div>
+   503→            <h2 className="mt-6 text-[26px] font-extrabold font-heading">{t.dClosingT}</h2>
+   504→            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[12.5px] text-white/85">
+   505→              <span className="rounded-full bg-white/10 px-3 py-1">{p.info.ownerName || orgName}</span>
+   506→              {p.info.phone && <span className="rounded-full bg-white/10 px-3 py-1"><bdi>{p.info.phone}</bdi></span>}
+   507→              {p.info.wilaya && <span className="rounded-full bg-white/10 px-3 py-1">{p.info.wilaya}</span>}
+   508→            </div>
+   509→            <div className="mt-6 text-[11px] text-white/60">{orgName}{branding.tagline ? ` — ${branding.tagline}` : ''}</div>
+   510→            <div className="mt-2 text-[10.5px] font-semibold text-white/50">{x.dToolCredits}</div>
+   511→          </div>
+   512→        </Slide>
+   513→      </div>
+   514→    </div>
+   515→  );
+   516→}
+   517→
