@@ -164,7 +164,7 @@ function StepInfo({ p, update }: { p: Project; update: (fn: (d: Project) => void
             </Select>
           </Field>
           <TextField label={t.ownerName} value={p.info.ownerName} onChange={v => update(d => { d.info.ownerName = v; })} />
-          <TextField label={t.phone} value={p.info.phone} onChange={v => update(d => { d.info.phone = v; })} />
+          <TextField label={t.phone} ltr value={p.info.phone} onChange={v => update(d => { d.info.phone = v; })} />
           <TextField label={t.wilaya} value={p.info.wilaya} onChange={v => update(d => { d.info.wilaya = v; })} />
           <TextField label={t.incubator} value={p.info.incubator} onChange={v => update(d => { d.info.incubator = v; })} hint={t.pg1275} />
           <TextField label={t.preparedDate} value={p.info.preparedDate} placeholder={todayStr('ar')} onChange={v => update(d => { d.info.preparedDate = v; })} />

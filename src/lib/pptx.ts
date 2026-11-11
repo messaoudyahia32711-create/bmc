@@ -25,6 +25,9 @@ export async function generatePptx(p: Project, lang: Lang, branding: Branding): 
   const ink = '22313A', sub = '4A5B68', faint = '8FA0AD', line = 'E2E9EE', panel = 'F7FAFB';
   const font = 'Cairo';
   const align = rtl ? ('right' as const) : ('left' as const);
+  /** Wrap a value in LEFT-TO-RIGHT MARKs so digit groups (phone numbers) keep
+   *  their natural order inside Arabic RTL text boxes in PowerPoint. */
+  const lrm = (s: string) => (s ? `\u200e${s}\u200e` : s);
   const projectName = p.info.projectTitleAr || p.name || t.untitled;
   const legalLabel = { micro: t.legalMicro, startup: t.legalStartup, patent: t.legalPatent, other: t.legalOther }[p.info.legal];
   const lines = (v?: string): string[] => (v || '').split('\n').map(s => s.trim().replace(/^•\s*/, '')).filter(Boolean);
@@ -95,7 +98,7 @@ export async function generatePptx(p: Project, lang: Lang, branding: Branding): 
       [x.dLegal, legalLabel],
       [t.ownerName, p.info.ownerName || t.na],
       [t.wilaya, p.info.wilaya || t.na],
-      [t.phone, p.info.phone || t.na],
+      [t.phone, p.info.phone ? lrm(p.info.phone) : t.na],
       [x.dDate, p.info.preparedDate || new Date().toLocaleDateString('fr-DZ')],
     ];
     tiles.forEach(([k, v], i) => {
@@ -351,7 +354,7 @@ export async function generatePptx(p: Project, lang: Lang, branding: Branding): 
     addTitle(s, `${t.dTeam} — ${t.dTeamT}`);
     const tiles: [string, string][] = [
       [t.ownerName, p.info.ownerName || t.na],
-      [t.phone, p.info.phone || t.na],
+      [t.phone, p.info.phone ? lrm(p.info.phone) : t.na],
       [t.wilaya, p.info.wilaya || t.na],
       [t.incubator, p.info.incubator || orgName],
       [x.dLegal, legalLabel],
@@ -367,7 +370,7 @@ export async function generatePptx(p: Project, lang: Lang, branding: Branding): 
     s.addShape('roundRect', { x: 0.6, y: 3.2, w: (W - 1.2) / 2 - 0.1, h: 1.7, fill: { color: panel }, line: { color: line }, rectRadius: 0.08 });
     s.addText(bullets(lines(p.market.valueProp).slice(0, 3)) as never, { x: 0.75, y: 3.32, w: (W - 1.2) / 2 - 0.4, h: 1.5, fontSize: 11, color: sub, ...bulletOpts });
     s.addShape('roundRect', { x: W / 2 + 0.1, y: 3.2, w: (W - 1.2) / 2 - 0.1, h: 1.7, fill: { color: primary, transparency: 93 }, line: { color: primary, transparency: 72 }, rectRadius: 0.08 });
-    txt(s, `${x.dContact}\n${p.info.ownerName || t.na} — ${p.info.phone || t.na}\n${p.info.wilaya || t.na} · ${p.info.incubator || orgName}`, { x: W / 2 + 0.25, y: 3.32, w: (W - 1.2) / 2 - 0.4, h: 1.5, fontSize: 11.5, bold: true, color: primary, valign: 'top' });
+    txt(s, `${x.dContact}\n${p.info.ownerName || t.na} — ${p.info.phone ? lrm(p.info.phone) : t.na}\n${p.info.wilaya || t.na} · ${p.info.incubator || orgName}`, { x: W / 2 + 0.25, y: 3.32, w: (W - 1.2) / 2 - 0.4, h: 1.5, fontSize: 11.5, bold: true, color: primary, valign: 'top' });
   }
 
   // ── 14 · Closing ──
@@ -378,7 +381,7 @@ export async function generatePptx(p: Project, lang: Lang, branding: Branding): 
     s.addText(x.dClosingAsk.toUpperCase(), { x: 0.5, y: 1.15, w: W - 1, h: 0.35, fontSize: 11, bold: true, color: 'BFD5E0', align: 'center', fontFace: font, charSpacing: 2 });
     s.addText(money(need), { x: 0.5, y: 1.5, w: W - 1, h: 0.9, fontSize: 40, bold: true, color: 'FFFFFF', align: 'center', fontFace: font });
     s.addText(t.dClosingT, { x: 0.5, y: 2.75, w: W - 1, h: 0.6, fontSize: 24, bold: true, color: 'FFFFFF', align: 'center', fontFace: font });
-    const meta = [p.info.ownerName, p.info.phone, p.info.wilaya].filter(Boolean).join('   ·   ');
+    const meta = [p.info.ownerName, p.info.phone ? lrm(p.info.phone) : '', p.info.wilaya].filter(Boolean).join('   ·   ');
     s.addText(meta, { x: 0.5, y: 3.55, w: W - 1, h: 0.4, fontSize: 13, color: 'EAF2F6', align: 'center', fontFace: font });
     s.addText(orgName, { x: 0.5, y: 4.6, w: W - 1, h: 0.35, fontSize: 10.5, color: 'BFD5E0', align: 'center', fontFace: font });
   }

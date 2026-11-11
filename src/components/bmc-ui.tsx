@@ -44,12 +44,13 @@ export function NumField({ label, value, onChange, hint, step = '1', min = '0', 
   );
 }
 
-export function TextField({ label, value, onChange, hint, placeholder, className = '' }: {
-  label: string; value: string; onChange: (v: string) => void; hint?: React.ReactNode; placeholder?: string; className?: string;
+export function TextField({ label, value, onChange, hint, placeholder, className = '', ltr = false }: {
+  label: string; value: string; onChange: (v: string) => void; hint?: React.ReactNode; placeholder?: string; className?: string; ltr?: boolean;
 }) {
   return (
     <Field label={label} hint={hint} className={className}>
-      <Input className="bg-white/80 dark:bg-card" value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
+      {/* ltr: for phone-like values — keeps digit groups in natural order inside RTL forms */}
+      <Input className={`bg-white/80 dark:bg-card ${ltr ? 'text-end' : ''}`} dir={ltr ? 'ltr' : undefined} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
     </Field>
   );
 }

@@ -340,7 +340,7 @@ function InfoLine({ k, v }: { k: string; v?: string }) {
   return (
     <div className="flex gap-2 border-b border-border/40 py-1">
       <span className="w-36 shrink-0 text-[#7A8B98]">{k}</span>
-      <strong>{v || t_na}</strong>
+      <strong><bdi>{v || t_na}</bdi></strong>
     </div>
   );
 }

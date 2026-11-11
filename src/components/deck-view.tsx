@@ -106,7 +106,7 @@ export function DeckView({ p, onBack }: { p: Project; onBack: () => void }) {
   const InfoTile = ({ k, v, accent = false }: { k: string; v: string; accent?: boolean }) => (
     <div className="rounded-xl border p-3" style={{ borderColor: accent ? `${primary}55` : '#E2E9EE', background: accent ? `${primary}0d` : '#FBFDFE' }}>
       <div className="text-[10px] font-bold uppercase tracking-wide text-[#8FA0AD]">{k}</div>
-      <div className="mt-1 truncate text-[13.5px] font-bold" style={{ color: accent ? primary : '#22313A' }} title={v}>{v || t.na}</div>
+      <div className="mt-1 truncate text-[13.5px] font-bold" style={{ color: accent ? primary : '#22313A' }} title={v}><bdi>{v || t.na}</bdi></div>
     </div>
   );
 
@@ -465,7 +465,7 @@ export function DeckView({ p, onBack }: { p: Project; onBack: () => void }) {
             <div className="rounded-xl border p-3.5" style={{ borderColor: '#C9DAE5', background: '#EAF0F5' }}>
               <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide" style={{ color: primary }}>{x.dContact}</div>
               <div className="space-y-1 text-[12.5px] text-[#3A4A56]">
-                <div>{p.info.ownerName || t.na} — {p.info.phone || t.na}</div>
+                <div>{p.info.ownerName || t.na} — <bdi>{p.info.phone || t.na}</bdi></div>
                 <div>{p.info.wilaya || t.na} · {p.info.incubator || orgName}</div>
                 <div>{x.dDate}: {p.info.preparedDate || fmtDate(Date.now(), lang)}</div>
               </div>
@@ -482,7 +482,7 @@ export function DeckView({ p, onBack }: { p: Project; onBack: () => void }) {
             <h2 className="mt-6 text-[26px] font-extrabold font-heading">{t.dClosingT}</h2>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[12.5px] text-white/85">
               <span className="rounded-full bg-white/10 px-3 py-1">{p.info.ownerName || orgName}</span>
-              {p.info.phone && <span className="rounded-full bg-white/10 px-3 py-1">{p.info.phone}</span>}
+              {p.info.phone && <span className="rounded-full bg-white/10 px-3 py-1"><bdi>{p.info.phone}</bdi></span>}
               {p.info.wilaya && <span className="rounded-full bg-white/10 px-3 py-1">{p.info.wilaya}</span>}
             </div>
             <div className="mt-6 text-[11px] text-white/60">{orgName}{branding.tagline ? ` — ${branding.tagline}` : ''}</div>
