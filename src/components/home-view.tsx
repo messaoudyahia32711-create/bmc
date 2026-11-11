@@ -6,6 +6,7 @@ import { Project, newProject, uid } from '@/lib/types';
 import { listProjects, saveProject, deleteProject, downloadJson, importJsonFile } from '@/lib/storage';
 import { buildDemoProject } from '@/lib/demo';
 import { completeness } from '@/lib/analytics';
+import { countUse, countProject } from '@/lib/stats';
 import { fmtDate } from '@/lib/format';
 import { SectionCard, CompletenessMeter, AlertCalm } from './bmc-ui';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ export function HomeView({ onOpen, onSettings, onGuide, firstVisit, onStartTour 
   const createNew = async () => {
     const p = newProject();
     await saveProject(p);
+    countUse();
+    countProject();
     onOpen(p);
   };
 
@@ -49,6 +52,8 @@ export function HomeView({ onOpen, onSettings, onGuide, firstVisit, onStartTour 
     const demo = buildDemoProject();
     demo.id = uid();
     await saveProject(demo);
+    countUse();
+    countProject();
     onOpen(demo);
   };
 

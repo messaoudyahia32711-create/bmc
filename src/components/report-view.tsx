@@ -8,6 +8,7 @@ import { coach } from '@/lib/coach';
 import { completeness, indicators } from '@/lib/analytics';
 import { matchPrograms } from '@/lib/knowledge';
 import { money as fmtMoney, todayStr, fmtDate } from '@/lib/format';
+import { countPdf } from '@/lib/stats';
 import {
   AppendixBreakEven, AppendixScenario, AppendixDetailedRevenue, AppendixAssets,
   AppendixFinancing, AppendixLoan, AppendixCashflow, AppendixCashGap, AppendixTax,
@@ -59,7 +60,7 @@ export function ReportView({ p, onBack }: { p: Project; onBack: () => void }) {
               </SelectContent>
             </Select>
           </div>
-          <Button size="sm" className="ms-auto gap-1.5" onClick={() => window.print()}><Printer className="h-4 w-4" />{t.printPdf}</Button>
+          <Button size="sm" className="ms-auto gap-1.5" onClick={() => { countPdf(); window.print(); }}><Printer className="h-4 w-4" />{t.printPdf}</Button>
         </div>
       </div>
 
