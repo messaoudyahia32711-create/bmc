@@ -1,0 +1,402 @@
+     1→
+     2→const IFU_THRESHOLD=30000000;
+     3→const steps=[...document.querySelectorAll('.step')];
+     4→let currentStep=0;
+     5→let currentLang='ar';
+     6→const I18N={
+     7→  ar:{
+     8→    dir:'rtl', lang:'ar',
+     9→    kicker:'مذكرة تخرج مشروع مؤسسة اقتصادية - القرار 1275 المعدل والمتمم',
+    10→    title:'مولد الجداول المالية ونموذج الأعمال التجاري — BMC',
+    11→    subtitle:'أداة موجهة لإعداد الملاحق المالية ونموذج الأعمال التجاري للمشاريع الجامعية',
+    12→    brandName:'حاضنة الأعمال - جامعة سوق أهراس',
+    13→    toolName:'مولد الجداول المالية ونموذج الأعمال التجاري — BMC',
+    14→    decision:'مذكرة تخرج مشروع مؤسسة اقتصادية - القرار 1275 المعدل والمتمم',
+    15→    slogan:'نحن نرعى أفكاركم اليوم لتصبح مشروعاً رائداً في الغد',
+    16→    privacy:'🔒 الأداة تعمل محلياً داخل المتصفح ولا تحفظ الأرقام أو بيانات المشروع أو ترسلها لأي جهة.',
+    17→    assist:'📌 نعلم جميع الطلبة أن الأداة الرقمية الخاصة بالخطة المالية ونموذج الأعمال BMC هي أداة مساعدة فقط، وُضعت لتسهيل العمل الأولي وتسريع إعداد المشروع، وتعتمد نتائجها على دقة وصحة المعلومات المدخلة.',
+    18→    rights:'جميع الحقوق محفوظة © حاضنة الأعمال - جامعة سوق أهراس',
+    19→    generate:'📎 توليد الملاحق', print:'⬇️ تحميل / حفظ PDF', reset:'🗑️ إفراغ البيانات',
+    20→    reportTitle:'الملاحق المالية للمشروع',
+    21→    reportSubtitle:'مولد الجداول المالية ونموذج الأعمال التجاري — BMC — مذكرة تخرج مشروع مؤسسة اقتصادية - القرار 1275 المعدل والمتمم',
+    22→    stepTabs:['معلومات المشروع','نوع المشروع','المنتجات والخدمات','التكاليف الثابتة','الاستثمار','التمويل والضريبة','السوق و BMC','الملاحق'],
+    23→    stepHeadings:['1️⃣ معلومات المشروع','2️⃣ نوع المشروع والإطار الجبائي','3️⃣ المنتجات والخدمات','4️⃣ التكاليف الثابتة للمؤسسة','5️⃣ الاستثمار والتجهيزات','6️⃣ التمويل والضريبة','7️⃣ السوق و BMC','8️⃣ الملاحق المالية'],
+    24→    infoLabels:['اسم المشروع','الاسم التجاري','الإطار القانوني','طبيعة المشروع','الجامعة','الكلية / المعهد','القسم','السنة الجامعية'],
+    25→    summaryPrefix:'ملخص الملاحق المالية', noProject:'مشروع بدون اسم'
+    26→  },
+    27→  fr:{
+    28→    dir:'ltr', lang:'fr',
+    29→    kicker:'Mémoire de fin d’études — Projet d’entreprise économique — Décision 1275 modifiée et complétée',
+    30→    title:'Générateur des tableaux financiers et du Business Model Canvas',
+    31→    subtitle:'Outil destiné à préparer les annexes financières et le BMC des projets universitaires',
+    32→    brandName:'Incubateur d’affaires — Université de Souk Ahras',
+    33→    toolName:'Générateur des tableaux financiers et du BMC',
+    34→    decision:'Mémoire de fin d’études — Projet d’entreprise économique — Décision 1275 modifiée et complétée',
+    35→    slogan:'Nous accompagnons vos idées aujourd’hui pour en faire des projets leaders demain',
+    36→    privacy:'🔒 L’outil fonctionne localement dans le navigateur et ne sauvegarde ni les chiffres ni les données du projet.',
+    37→    assist:'📌 Cet outil numérique pour le plan financier et le BMC est uniquement un outil d’aide. Il sert à faciliter le travail initial et à accélérer la préparation du projet. Les résultats dépendent de l’exactitude des informations saisies.',
+    38→    rights:'Tous droits réservés © Incubateur d’affaires — Université de Souk Ahras',
+    39→    generate:'📎 Générer les annexes', print:'⬇️ Télécharger PDF', reset:'🗑️ Réinitialiser',
+    40→    reportTitle:'Annexes financières du projet',
+    41→    reportSubtitle:'Générateur des tableaux financiers et du BMC — Mémoire de fin d’études — Projet d’entreprise économique — Décision 1275 modifiée et complétée',
+    42→    stepTabs:['Informations du projet','Type de projet','Produits et services','Charges fixes','Investissement','Financement et fiscalité','Marché et BMC','Annexes'],
+    43→    stepHeadings:['1️⃣ Informations du projet','2️⃣ Type de projet et cadre fiscal','3️⃣ Produits et services','4️⃣ Charges fixes de l’entreprise','5️⃣ Investissements et équipements','6️⃣ Financement et fiscalité','7️⃣ Marché et BMC','8️⃣ Annexes financières'],
+    44→    infoLabels:['Nom du projet','Nom commercial','Cadre juridique','Nature du projet','Université','Faculté / Institut','Département','Année universitaire'],
+    45→    summaryPrefix:'Résumé des annexes financières', noProject:'Projet sans nom'
+    46→  }
+    47→};
+    48→const fmt=n=>`${Math.round(Number(n||0)).toLocaleString('fr-DZ')} دج`;
+    49→const val=id=>Number(document.getElementById(id)?.value||0);
+    50→const txt=id=>document.getElementById(id)?.value||'';
+    51→const OUT={
+    52→  ar:{
+    53→    appendices:['ملحق 01: نقطة التعادل','ملحق 02: جدول رقم الأعمال — 3 سيناريوهات لمدة خمس سنوات','ملحق 03: جدول رقم الأعمال التفصيلي — السيناريو الواقعي','ملحق 04: جدول الاستثمار والاهتلاك','ملحق 04-ب: الهيكل التمويلي وفجوة التمويل','ملحق 05: جدول سداد القرض','ملحق 06: خطة الخزينة الشهرية — السنة الأولى','ملحق 06-ب: تحليل فجوة الخزينة','ملحق 07: محاكاة الضريبة — خمس سنوات','ملحق 08: جدول حسابات النتائج — SCF — خمس سنوات','ملحق 09: نموذج العمل التجاري — BMC','ملحق 10: تفصيل الإيرادات والتكاليف داخل BMC'],
+    54→    kpis:['رقم الأعمال الشهري','الربح الصافي الشهري','التكاليف الثابتة','نقطة التعادل','ميزانية الانطلاق','درجة التقييم'],
+    55→    scenarios:['تفاؤلي','واقعي','تشاؤمي'], year:'السنة', tableScenario:['السيناريو','السنة 1','السنة 2','السنة 3','السنة 4','السنة 5'],
+    56→    detailedHeaders:['السنة','رقم الأعمال','التكاليف المتغيرة','هامش الربح الإجمالي','نسبة الهامش'],
+    57→    assetHeaders:['الاستثمار','الحساب المحاسبي','القيمة','مدة الاهتلاك','قسط الاهتلاك السنوي'], total:'المجموع',
+    58→    financingHeaders:['مصدر / احتياج','المبلغ','النسبة','ملاحظة'], financingRows:['إجمالي الاستثمار','مصاريف قبل الانطلاق','رأس المال العامل المطلوب لتغطية فجوة الخزينة التشغيلية','إجمالي الاحتياج التمويلي','مساهمة شخصية','منحة / دعم','قرض'], financingGap:'فجوة تمويلية', financingOk:'فائض / تغطية كافية',
+    59→    loanHeaders:['السنة','القسط','الفائدة','الأصل','الباقي'], noLoan:'لا يوجد قرض.',
+    60→    months:['جانفي','فيفري','مارس','أفريل','ماي','جوان','جويلية','أوت','سبتمبر','أكتوبر','نوفمبر','ديسمبر'], cashHeaders:['الشهر','الإيرادات','تكاليف متغيرة','تكاليف ثابتة','قسط القرض','الخروج النقدي','صافي الخزينة','الرصيد التراكمي'],
+    61→    cashGapHeaders:['المؤشر','القيمة','القراءة المالية'], cashGapRows:['عدد أشهر الخزينة السالبة','أول شهر خزينة سالبة','آخر شهر خزينة سالبة','أكبر عجز تراكمي','رأس المال العامل الأدنى المطلوب'],
+    62→    taxHeaders:['السنة','رقم الأعمال','النظام','النسبة','سبب الاختيار','النتيجة قبل الضريبة','الضريبة','الصافي'],
+    63→    scfHeaders:['البند','السنة 1','السنة 2','السنة 3','السنة 4','السنة 5'], scfSections:['حساب الاستغلال','توزيع القيمة المضافة','النتيجة'],
+    64→    beHeaders:['المؤشر','القيمة','طريقة الحساب'], beRows:['التكاليف الثابتة الشهرية','رقم الأعمال الشهري','الهامش الإجمالي الشهري','نسبة الهامش','متوسط هامش الوحدة','نقطة التعادل بالوحدات','نقطة التعادل برقم الأعمال','نقطة التعادل بالأشهر'], unit:'وحدة', monthUnit:'شهر',
+    65→    bmc:['الشركاء الرئيسيون','الأنشطة الرئيسية','الموارد الرئيسية','القيمة المقترحة','العلاقة مع العملاء','قنوات التوزيع','شرائح العملاء','هيكل التكاليف','مصادر الإيرادات'],
+    66→    bmcFinance:['البند','القيمة الشهرية','القيمة السنوية','مصادر الإيرادات','التكاليف المتغيرة','التكاليف الثابتة','الاهتلاك','إجمالي هيكل التكاليف'],
+    67→    recommendationTitle:'توصيات تلقائية:', noIssues:'لا توجد مشاكل حرجة في المدخلات الحالية.', verdictGood:'🟢 المشروع قابل للتنفيذ مبدئياً ومؤشراته جيدة', verdictMid:'🟡 المشروع ممكن لكن يحتاج تحسينات قبل عرضه على اللجنة', verdictBad:'🔴 المشروع غير جاهز مالياً حالياً'
+    68→  },
+    69→  fr:{
+    70→    appendices:['Annexe 01 : Seuil de rentabilité','Annexe 02 : Chiffre d’affaires — 3 scénarios × 5 ans','Annexe 03 : Chiffre d’affaires détaillé — scénario réaliste','Annexe 04 : Investissements et amortissements','Annexe 04-B : Structure de financement et écart de financement','Annexe 05 : Tableau de remboursement du prêt','Annexe 06 : Plan de trésorerie mensuel — année 1','Annexe 06-B : Analyse du déficit de trésorerie','Annexe 07 : Simulateur fiscal — 5 ans','Annexe 08 : Compte de résultat SCF — 5 ans','Annexe 09 : Business Model Canvas','Annexe 10 : Revenus et coûts dans le BMC'],
+    71→    kpis:['Chiffre d’affaires mensuel','Résultat net mensuel','Charges fixes','Seuil de rentabilité','Budget de lancement','Score du projet'],
+    72→    scenarios:['Optimiste','Réaliste','Pessimiste'], year:'Année', tableScenario:['Scénario','Année 1','Année 2','Année 3','Année 4','Année 5'],
+    73→    detailedHeaders:['Année','Chiffre d’affaires','Coûts variables','Marge brute','Taux de marge'],
+    74→    assetHeaders:['Investissement','Compte comptable','Valeur','Durée d’amortissement','Dotation annuelle'], total:'Total',
+    75→    financingHeaders:['Source / Besoin','Montant','Pourcentage','Remarque'], financingRows:['Investissement total','Frais avant démarrage','Fonds de roulement requis pour couvrir le déficit opérationnel','Besoin total de financement','Apport personnel','Subvention / aide','Autre financement','Prêt'], financingGap:'Écart de financement', financingOk:'Excédent / couverture suffisante',
+    76→    loanHeaders:['Année','Annuité','Intérêts','Principal','Solde restant'], noLoan:'Aucun prêt.',
+    77→    months:['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'], cashHeaders:['Mois','Recettes','Coûts variables','Charges fixes','Mensualité du prêt','Sorties de trésorerie','Flux net','Solde cumulé'],
+    78→    cashGapHeaders:['Indicateur','Valeur','Lecture financière'], cashGapRows:['Nombre de mois négatifs','Premier mois négatif','Dernier mois négatif','Déficit cumulé maximal','Fonds de roulement minimal requis'],
+    79→    taxHeaders:['Année','Chiffre d’affaires','Régime','Taux','Justification','Résultat avant impôt','Impôt','Résultat net'],
+    80→    scfHeaders:['Rubrique','Année 1','Année 2','Année 3','Année 4','Année 5'], scfSections:['Compte d’exploitation','Répartition de la valeur ajoutée','Résultat'],
+    81→    beHeaders:['Indicateur','Valeur','Méthode de calcul'], beRows:['Charges fixes mensuelles','Chiffre d’affaires mensuel','Marge brute mensuelle','Taux de marge','Marge unitaire moyenne','Seuil de rentabilité en unités','Seuil de rentabilité en chiffre d’affaires','Seuil de rentabilité en mois'], unit:'unités', monthUnit:'mois',
+    82→    bmc:['Partenaires clés','Activités clés','Ressources clés','Proposition de valeur','Relation client','Canaux','Segments de clientèle','Structure des coûts','Sources de revenus'],
+    83→    bmcFinance:['Rubrique','Valeur mensuelle','Valeur annuelle','Sources de revenus','Coûts variables','Charges fixes','Amortissement','Total de la structure des coûts'],
+    84→    recommendationTitle:'Recommandations automatiques :', noIssues:'Aucun problème critique détecté dans les données actuelles.', verdictGood:'🟢 Le projet semble réalisable avec de bons indicateurs', verdictMid:'🟡 Le projet est possible, mais nécessite des améliorations avant présentation', verdictBad:'🔴 Le projet n’est pas encore prêt financièrement'
+    85→  }
+    86→};
+    87→function legalLabel(v){if(currentLang!=='fr')return v||'—';return {'مؤسسة مصغرة':'Micro-entreprise','مؤسسة ناشئة':'Startup','براءة اختراع':'Brevet d’invention'}[v]||v||'—'}
+    88→function typeLabel(v){if(currentLang!=='fr')return v;return {'خدمي':'Services','صناعي':'Industriel','تجاري':'Commercial','رقمي':'Numérique / technologique'}[v]||v}
+    89→function regimeLabel(v){if(currentLang!=='fr')return v; if(!v)return '—'; if(v.includes('إعفاء Startup'))return 'Exonération Startup Label'; if(v.includes('إعفاء مشروع'))return 'Exonération projet innovant / brevet'; if(v.includes('إعفاء'))return 'Exonération fiscale'; if(v.includes('النظام الحقيقي'))return 'Régime réel IBS'; return v;}
+    90→
+    91→const FORM_LABELS=[
+    92→ ['الإطار القانوني','Cadre juridique'],['عنوان المشروع بالعربية','Titre du projet en arabe'],['عنوان المشروع بالإنجليزية','Titre du projet en anglais'],['الاسم التجاري للمؤسسة','Nom commercial de l’entreprise'],['اسم الجامعة','Université'],['الكلية / المعهد','Faculté / Institut'],['القسم','Département'],['المستوى والتخصص','Niveau et spécialité'],['السنة الجامعية','Année universitaire'],['وصف مختصر للمشروع','Description courte du projet'],
+    93→ ['طبيعة المشروع','Nature du projet'],['طبيعة النشاط الجبائي','Nature fiscale de l’activité'],['اسم المنتج/الخدمة','Nom du produit/service'],['نوع الإيراد','Modèle de revenus'],['تصنيف المنتج','Catégorie du produit'],['سعر البيع للوحدة','Prix de vente unitaire'],['تكلفة متغيرة للوحدة','Coût variable unitaire'],['الكمية الشهرية','Quantité mensuelle'],['نمو الكمية سنوياً %','Croissance annuelle de la quantité %'],['قيمة الصفقة','Valeur moyenne de la transaction'],['نسبة العمولة %','Taux de commission %'],['عدد الصفقات شهرياً','Nombre de transactions/mois'],['تكلفة الصفقة الواحدة','Coût par transaction'],['سعر الاشتراك الشهري','Prix de l’abonnement mensuel'],['عدد المشتركين','Nombre d’abonnés'],['نمو المشتركين شهرياً %','Croissance mensuelle des abonnés %'],['تكلفة خدمة المشترك','Coût de service par abonné'],
+    94→ ['إيجار','Loyer'],['كهرباء + غاز + ماء','Électricité + gaz + eau'],['هاتف + أنترنت','Téléphone + internet'],['أجور ورواتب','Salaires'],['تسويق وإشهار','Marketing et publicité'],['صيانة وتصليح','Maintenance et réparation'],['تأمين / محاسبة / إدارة','Assurance / comptabilité / administration'],['مصاريف أخرى','Autres charges'],['نمو التكاليف سنوياً %','Croissance annuelle des charges %'],
+    95→ ['اسم الاستثمار الآخر','Nom de l’autre investissement'],['اسم الاستثمار','Nom de l’investissement'],['الحساب المحاسبي','Compte comptable'],['القيمة','Valeur'],['مدة الاهتلاك / سنة','Durée d’amortissement / an'],
+    96→ ['مساهمة شخصية %','Apport personnel %'],['قرض %','Prêt %'],['دعم / منحة %','Subvention / aide %'],['مساهمة شخصية / رصيد افتتاحي','Apport personnel / solde initial'],['منحة / دعم','Subvention / aide'],['تمويل آخر','Autre financement'],['هل يوجد قرض؟','Existe-t-il un prêt ?'],['مصاريف قبل الانطلاق','Frais avant démarrage'],['أول شهر مبيعات','Premier mois de ventes'],['نمو شهري للسنة الأولى %','Croissance mensuelle année 1 %'],['مبلغ القرض','Montant du prêt'],['نسبة الفائدة السنوية %','Taux d’intérêt annuel %'],['مدة السداد / سنة','Durée de remboursement / an'],['هل عندك Label Startup / مشروع مبتكر؟','Avez-vous un Label Startup / projet innovant ?'],['مدة إعفاء إضافية حسب توجيه الأستاذ / القانون','Durée d’exonération supplémentaire'],
+    97→ ['شرائح الزبائن','Segments de clientèle'],['القيمة المقترحة','Proposition de valeur'],['قنوات التوزيع','Canaux de distribution'],['الشراكات الرئيسية','Partenaires clés'],['الأنشطة الرئيسية','Activités clés'],['نمو تفاؤلي سنوياً %','Croissance optimiste annuelle %'],['نمو واقعي سنوياً %','Croissance réaliste annuelle %'],['نمو تشاؤمي سنوياً %','Croissance pessimiste annuelle %']
+    98→];
+    99→const OPTION_MAPS={
+   100→ legal:{keys:['مؤسسة مصغرة','مؤسسة ناشئة','براءة اختراع'],fr:['Micro-entreprise','Startup','Brevet d’invention']},
+   101→ fiscalActivity:{keys:['commercial','services','production','mixed'],ar:['تجاري','خدمات','إنتاج / صناعي','مختلط'],fr:['Commercial','Services','Production / industriel','Mixte']},
+   102→ hasLoan:{keys:['no','yes'],ar:['لا','نعم'],fr:['Non','Oui']},
+   103→ hasStartupLabel:{keys:['no','yes'],ar:['لا','نعم'],fr:['Non','Oui']},
+   104→ pModel:{keys:['سعر ثابت','عمولة %','اشتراك'],fr:['Prix fixe','Commission %','Abonnement']},
+   105→ pCategory:{keys:['خدمة','منتج تجاري','منتج صناعي','رقمي'],fr:['Service','Produit commercial','Produit industriel','Numérique']}
+   106→};
+   107→const CHOICE_LABELS={'خدمي':'Services','صناعي':'Industriel','تجاري':'Commercial','رقمي':'Numérique / technologique'};
+   108→const ASSET_LABELS={'تكاليف التأسيس والإنشاء':'Frais de création et de démarrage','برمجيات وتراخيص':'Logiciels et licences','تطوير منصة / تطبيق':'Développement plateforme / application','أجهزة حاسوب للتطوير':'Ordinateurs de développement','آلات ومعدات الإنتاج':'Machines et équipements de production','معدات وأدوات صناعية':'Équipements et outils industriels','تهيئة المحل':'Aménagement du local','الأصول البيولوجية':'Actifs biologiques','العتاد المتنقل':'Matériel roulant','العتاد المكتبي':'Matériel de bureau','عتاد الإعلام الآلي':'Matériel informatique','عتاد السمعي البصري':'Matériel audiovisuel','عتاد الاتصالات':'Matériel de communication','تركيب التجهيزات':'Installation des équipements','رأس المال العامل':'Fonds de roulement','موقع إلكتروني / منصة':'Site web / plateforme','معدات تصوير وإنتاج محتوى':'Matériel de tournage et création de contenu'};
+   109→const ALERT_TRANSLATIONS=[
+   110→ ['تم حذف Page de garde من الأداة. التقرير يبدأ مباشرة بصفحة تعريف مختصرة للملاحق المالية ثم الجداول.','La page de garde a été supprimée. Le rapport commence directement par une page d’identification des annexes financières puis les tableaux.'],
+   111→ ['سقف IFU المعتمد في المحاكاة:','Seuil IFU utilisé dans la simulation :'],
+   112→ ['التكاليف المتغيرة تخص المنتج أو الخدمة، أما التكاليف الثابتة للمؤسسة ففي خطوة مستقلة.','Les coûts variables concernent le produit ou le service ; les charges fixes de l’entreprise sont saisies dans une étape séparée.'],
+   113→ ['إذا كان المشروع صناعياً أو تكنولوجياً، غياب الاستثمار غير منطقي غالباً. اختر التجهيزات المناسبة أو أضفها يدوياً.','Si le projet est industriel ou technologique, l’absence d’investissement est généralement incohérente. Choisissez les équipements adaptés ou ajoutez-les manuellement.'],
+   114→ ['الهيكل التمويلي يُدخل بالمبالغ، والنظام يحسب النسب تلقائياً. لا تعتمد على نسب فقط مثل 30% أو 40%.','La structure de financement doit être saisie en montants. Le système calcule les pourcentages automatiquement. Ne vous basez pas uniquement sur 30% ou 40%.']
+   115→];
+   116→function initTabs(){const box=document.getElementById('stepTabs');box.innerHTML='';steps.forEach((s,i)=>{const b=document.createElement('button');b.className='step-tab';b.innerHTML=`<span>${i+1}</span> ${s.dataset.title}`;b.onclick=()=>goStep(i);box.appendChild(b)});refreshTabs()}
+   117→function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
+   118→function setLanguage(lang){currentLang=lang||'ar';localStorage.setItem('financial_tool_lang',currentLang);applyLanguage()}
+   119→function refreshTabs(){document.querySelectorAll('.step-tab').forEach((b,i)=>{b.classList.toggle('active',i===currentStep);b.classList.toggle('done',i<currentStep)});steps.forEach((s,i)=>s.classList.toggle('active',i===currentStep))}
+   120→function goStep(i){currentStep=Math.max(0,Math.min(i,steps.length-1));calculateAll();refreshTabs()}function nextStep(){goStep(currentStep+1)}function prevStep(){goStep(currentStep-1)}
+   121→function projectTypes(){return[...document.querySelectorAll('input[name="projectType"]:checked')].map(x=>x.value)}
+   122→function fixedMonthly(){return val('rent')+val('utilities')+val('internet')+val('salaries')+val('marketing')+val('maintenance')+val('adminCosts')+val('otherCosts')}
+   123→function externalServicesMonthly(){return val('rent')+val('utilities')+val('internet')+val('marketing')+val('maintenance')+val('adminCosts')+val('otherCosts')}
+   124→const assetOptions=['تكاليف التأسيس والإنشاء','برمجيات وتراخيص','تطوير منصة / تطبيق','أجهزة حاسوب للتطوير','آلات ومعدات الإنتاج','معدات وأدوات صناعية','تهيئة المحل','الأصول البيولوجية','العتاد المتنقل','العتاد المكتبي','عتاد الإعلام الآلي','عتاد السمعي البصري','عتاد الاتصالات','تركيب التجهيزات','رأس المال العامل','موقع إلكتروني / منصة','معدات تصوير وإنتاج محتوى'];
+   125→function getDefaultYears(n){if(n.includes('رأس المال العامل'))return 1;if(n.includes('تأسيس')||n.includes('إنشاء'))return 1;if(n.includes('برمجيات')||n.includes('منصة')||n.includes('تطبيق')||n.includes('موقع'))return 3;if(n.includes('إعلام آلي')||n.includes('حاسوب')||n.includes('مكتبي')||n.includes('اتصالات')||n.includes('سمعي')||n.includes('تصوير'))return 5;if(n.includes('آلات')||n.includes('معدات')||n.includes('أدوات')||n.includes('تهيئة'))return 10;return 5}
+   126→function getDefaultAccount(n){if(n.includes('برمجيات')||n.includes('منصة')||n.includes('تطبيق')||n.includes('موقع'))return 'حـ/204 - برمجيات';if(n.includes('تأسيس')||n.includes('إنشاء'))return 'حـ/201 - مصاريف التأسيس';if(n.includes('آلات')||n.includes('معدات')||n.includes('أدوات'))return 'حـ/215 - معدات وأدوات';if(n.includes('إعلام آلي')||n.includes('حاسوب')||n.includes('مكتبي')||n.includes('اتصالات')||n.includes('سمعي')||n.includes('تصوير'))return 'حـ/218 - تثبيتات عينية أخرى';if(n.includes('رأس المال العامل'))return 'BFR - رأس مال عامل';return 'حـ/218 - تثبيتات أخرى'}
+   127→function assetExists(n){return[...document.querySelectorAll('.asset .a-name')].some(x=>x.value===n)}function createAssetFromList(n){if(assetExists(n))return;addAsset({name:n,value:0,years:getDefaultYears(n),account:getDefaultAccount(n)});calculateAll()}
+   128→function initAssetSelector(){const b=document.getElementById('assetSelector');b.innerHTML='';assetOptions.forEach(n=>{const l=document.createElement('label');l.className='choice';l.innerHTML=`<input type="checkbox" onchange="if(this.checked) createAssetFromList('${n.replace(/'/g,"\\'")}')"> ${n}`;b.appendChild(l)})}
+   129→function initCustomAsset(){const t=document.getElementById('customAssetToggle'),b=document.getElementById('customAssetBox');if(t&&b)t.addEventListener('change',()=>b.classList.toggle('hidden',!t.checked))}
+   130→function addCustomAsset(){const input=document.getElementById('customAssetName'),n=(input.value||'').trim();if(!n)return alert('اكتب اسم الاستثمار أولاً');createAssetFromList(n);input.value=''}
+   131→function suggestAssetsByProjectType(){const s=projectTypes();let a=[];if(s.includes('صناعي'))a.push('آلات ومعدات الإنتاج','معدات وأدوات صناعية','تركيب التجهيزات','رأس المال العامل');if(s.includes('تجاري'))a.push('تهيئة المحل','العتاد المكتبي','عتاد الإعلام الآلي','رأس المال العامل');if(s.includes('خدمي'))a.push('العتاد المكتبي','عتاد الإعلام الآلي','برمجيات وتراخيص','تكاليف التأسيس والإنشاء');if(s.includes('رقمي'))a.push('أجهزة حاسوب للتطوير','برمجيات وتراخيص','تطوير منصة / تطبيق','موقع إلكتروني / منصة','تكاليف التأسيس والإنشاء','رأس المال العامل');[...new Set(a)].forEach(n=>createAssetFromList(n))}
+   132→function addAsset(d={}){const div=document.createElement('div');div.className='item asset';div.innerHTML=`<div class="grid"><div class="col-4"><label>اسم الاستثمار</label><input class="a-name" value="${d.name||''}"></div><div class="col-3"><label>الحساب المحاسبي</label><input class="a-account" value="${d.account||getDefaultAccount(d.name||'')}"></div><div class="col-2"><label>القيمة</label><input type="number" class="a-value" value="${d.value||0}"></div><div class="col-2"><label>مدة الاهتلاك / سنة</label><input type="number" class="a-years" value="${d.years||5}"></div><div class="col-1 no-print"><label>&nbsp;</label><button class="btn small red" onclick="this.closest('.asset').remove();calculateAll()">×</button></div></div>`;document.getElementById('assets').appendChild(div)}
+   133→function assetTotals(){let invest=0,dep=0,rows=[];document.querySelectorAll('.asset').forEach(a=>{const name=a.querySelector('.a-name').value||'-',account=a.querySelector('.a-account')?.value||getDefaultAccount(name),value=+a.querySelector('.a-value').value||0,years=+a.querySelector('.a-years').value||0;invest+=value;if(years>0)dep+=value/years;rows.push({name,account,value,years,dep:years>0?value/years:0})});return{invest,dep,rows}}
+   134→function addProduct(d={}){const div=document.createElement('div');div.className='item product';div.innerHTML=`<div class="grid"><div class="col-4"><label>اسم المنتج/الخدمة</label><input class="p-name" value="${d.name||''}"></div><div class="col-4"><label>نوع الإيراد</label><select class="p-model" onchange="renderProductFields(this)"><option ${d.model==='سعر ثابت'?'selected':''}>سعر ثابت</option><option ${d.model==='عمولة %'?'selected':''}>عمولة %</option><option ${d.model==='اشتراك'?'selected':''}>اشتراك</option></select></div><div class="col-4"><label>تصنيف المنتج</label><select class="p-category" onchange="applyProductCategoryDefaults(this)"><option ${d.category==='خدمة'?'selected':''}>خدمة</option><option ${d.category==='منتج تجاري'?'selected':''}>منتج تجاري</option><option ${d.category==='منتج صناعي'?'selected':''}>منتج صناعي</option><option ${d.category==='رقمي'?'selected':''}>رقمي</option></select></div><div class="col-12 p-fields"></div><div class="col-12"><div class="alert green p-smart-note">اختر تصنيف المنتج لتظهر توصيات ذكية.</div></div><div class="col-12 no-print"><button class="btn small red" onclick="this.closest('.product').remove();calculateAll()">حذف المنتج</button></div></div>`;document.getElementById('products').appendChild(div);renderProductFields(div.querySelector('.p-model'),d)}
+   135→function renderProductFields(sel,d={}){const box=sel.closest('.product').querySelector('.p-fields');if(sel.selectedIndex===0){box.innerHTML=`<div class="grid"><div class="col-3"><label>سعر البيع للوحدة</label><input type="number" class="p-price" value="${d.price||0}"></div><div class="col-3"><label>تكلفة متغيرة للوحدة</label><input type="number" class="p-variable" value="${d.variable||0}"></div><div class="col-3"><label>الكمية الشهرية</label><input type="number" class="p-qty" value="${d.qty||0}"></div><div class="col-3"><label>نمو الكمية سنوياً %</label><input type="number" class="p-growth" value="${d.growth||0}"></div></div>`}else if(sel.selectedIndex===1){box.innerHTML=`<div class="grid"><div class="col-3"><label>قيمة الصفقة</label><input type="number" class="p-deal" value="${d.deal||0}"></div><div class="col-3"><label>نسبة العمولة %</label><input type="number" class="p-commission" value="${d.commission||0}"></div><div class="col-3"><label>عدد الصفقات شهرياً</label><input type="number" class="p-deals" value="${d.deals||0}"></div><div class="col-3"><label>تكلفة الصفقة الواحدة</label><input type="number" class="p-deal-cost" value="${d.dealCost||0}"></div></div>`}else{box.innerHTML=`<div class="grid"><div class="col-3"><label>سعر الاشتراك الشهري</label><input type="number" class="p-sub" value="${d.sub||0}"></div><div class="col-3"><label>عدد المشتركين</label><input type="number" class="p-subs" value="${d.subs||0}"></div><div class="col-3"><label>نمو المشتركين شهرياً %</label><input type="number" class="p-sub-growth" value="${d.subGrowth||0}"></div><div class="col-3"><label>تكلفة خدمة المشترك</label><input type="number" class="p-sub-cost" value="${d.subCost||0}"></div></div>`}applyProductCategoryDefaults(sel.closest('.product').querySelector('.p-category'),true)}
+   136→function applyProductCategoryDefaults(select,keepValues=false){const p=select.closest('.product'),c=select.value,n=p.querySelector('.p-smart-note');let t='';if(c==='رقمي'){t=currentLang==='fr'?'💡 Produit numérique : le coût variable est faible, mais rarement nul.':'💡 منتج رقمي: التكلفة المتغيرة منخفضة لكنها ليست 0.';if(!keepValues){let v=p.querySelector('.p-variable');if(v&&Number(v.value||0)===0)v.value=100;let s=p.querySelector('.p-sub-cost');if(s&&Number(s.value||0)===0)s.value=100;let g=p.querySelector('.p-sub-growth');if(g&&Number(g.value||0)===0)g.value=10}}else if(c==='خدمة'){t=currentLang==='fr'?'💡 Service : tenez compte du temps, du déplacement, des outils et des commissions.':'💡 خدمة: احسب الوقت، التنقل، الأدوات، والعمولات.';if(!keepValues){let v=p.querySelector('.p-variable');if(v&&Number(v.value||0)===0)v.value=500}}else if(c==='منتج تجاري')t=currentLang==='fr'?'💡 Produit commercial : le coût inclut l’achat, l’emballage et le transport.':'💡 منتج تجاري: التكلفة تشمل الشراء، التغليف، النقل.';else t=currentLang==='fr'?'💡 Produit industriel : le coût inclut les matières premières, l’énergie, l’emballage et la main-d’œuvre directe.':'💡 منتج صناعي: التكلفة تشمل المواد الأولية، الطاقة، التغليف، واليد العاملة المباشرة.';if(n)n.textContent=t;translateDynamicUI();calculateAll()}
+   137→function getProductMonthlyTotals(monthIndex=1,scenarioAnnualGrowth=0){let rev=0,varCost=0,unitMargins=[];const yearElapsed=Math.floor((monthIndex-1)/12);document.querySelectorAll('.product').forEach(p=>{const m=p.querySelector('.p-model').value;if(m==='سعر ثابت'){const price=+p.querySelector('.p-price').value||0,variable=+p.querySelector('.p-variable').value||0,baseQty=+p.querySelector('.p-qty').value||0,productGrowth=(+p.querySelector('.p-growth').value||0)/100,g=productGrowth||scenarioAnnualGrowth,qty=baseQty*Math.pow(1+g,yearElapsed);rev+=price*qty;varCost+=variable*qty;if(price>variable)unitMargins.push(price-variable)}else if(m==='عمولة %'){const deal=+p.querySelector('.p-deal').value||0,com=(+p.querySelector('.p-commission').value||0)/100,baseDeals=+p.querySelector('.p-deals').value||0,cost=+p.querySelector('.p-deal-cost').value||0,deals=baseDeals*Math.pow(1+scenarioAnnualGrowth,yearElapsed);rev+=deal*com*deals;varCost+=cost*deals}else{const sub=+p.querySelector('.p-sub').value||0,baseSubs=+p.querySelector('.p-subs').value||0,g=(+p.querySelector('.p-sub-growth').value||0)/100,cost=+p.querySelector('.p-sub-cost').value||0,subs=g>0?baseSubs*Math.pow(1+g,monthIndex-1):baseSubs*Math.pow(1+scenarioAnnualGrowth,yearElapsed);rev+=sub*subs;varCost+=cost*subs}});return{rev,varCost,unitMargins}}
+   138→function getProductYearTotals(year=1,g=0){let rev=0,varCost=0;for(let m=(year-1)*12+1;m<=year*12;m++){const t=getProductMonthlyTotals(m,g);rev+=t.rev;varCost+=t.varCost}return{rev,varCost}}function getProductNames(){const names=[...document.querySelectorAll('.product')].map(x=>x.querySelector('.p-name')?.value).filter(Boolean);if(names.length)return names.join(currentLang==='fr'?', ':'، ');return currentLang==='fr'?'produits et services':'المنتجات والخدمات'}
+   139→function totalFunding(){return val('selfFunding')+val('grantAmount')+val('otherFunding')+(txt('hasLoan')==='yes'?val('loanAmount'):0)}
+   140→function getStartupBudget(){const assets=assetTotals().invest,preStart=val('preStartCosts'),opRows=buildOperationalCashRows(),minOp=Math.min(...opRows.map(r=>r.cumulative),0),workingCapital=Math.abs(Math.min(minOp,0));return{assets,preStart,workingCapital,total:assets+preStart+workingCapital}}
+   141→function fundingPercentTotal(){return val('selfPercent')+val('loanPercent')+val('grantPercent')}
+   142→function computeAutoFundingRatios(){
+   143→  const budget=getStartupBudget().total,types=projectTypes();
+   144→  let self=20,loan=50,grant=30;
+   145→  if(types.includes('رقمي')){self=25;loan=35;grant=40}
+   146→  else if(types.includes('صناعي')){self=20;loan=60;grant=20}
+   147→  else if(types.includes('تجاري')){self=30;loan=45;grant=25}
+   148→  else if(types.includes('خدمي')){self=35;loan=35;grant=30}
+   149→  else if(budget<=1000000){self=40;loan=30;grant=30}
+   150→  else if(budget>5000000){self=20;loan=60;grant=20}
+   151→  return{self,loan,grant};
+   152→}
+   153→function setAutoFundingRatios(){
+   154→  const r=computeAutoFundingRatios();
+   155→  const sp=document.getElementById('selfPercent'),lp=document.getElementById('loanPercent'),gp=document.getElementById('grantPercent');
+   156→  if(sp)sp.value=r.self;if(lp)lp.value=r.loan;if(gp)gp.value=r.grant;
+   157→  return r;
+   158→}
+   159→function getSmartFunding(){const budget=getStartupBudget().total;return{budget,self:budget*val('selfPercent')/100,loan:budget*val('loanPercent')/100,grant:budget*val('grantPercent')/100,other:0,totalPercent:fundingPercentTotal()}}
+   160→function autoLoanSettings(){const budget=getStartupBudget().total;let years=3;if(budget>2000000)years=5;if(budget>5000000)years=7;return{rate:5,years}}
+   161→function clampFundingPercents(){
+   162→  ['selfPercent','loanPercent','grantPercent'].forEach(id=>{const el=document.getElementById(id);if(!el)return;let v=Number(el.value||0);if(v<0)v=0;if(v>100)v=100;el.value=v});
+   163→}
+   164→function updateAutoFundingPreview(){
+   165→  clampFundingPercents();
+   166→  const f=getSmartFunding();
+   167→  const totalBox=document.getElementById('percentTotalBox');
+   168→  if(totalBox){
+   169→    totalBox.textContent=currentLang==='fr'?`Total : ${f.totalPercent}%`:`المجموع: ${f.totalPercent}%`;
+   170→    totalBox.classList.toggle('bad',f.totalPercent>100);
+   171→    totalBox.classList.toggle('ok',f.totalPercent<=100);
+   172→  }
+   173→  const budgetBox=document.getElementById('startupBudgetDisplay');
+   174→  if(budgetBox)budgetBox.value=money(f.budget);
+   175→  const setText=(id,percent,amount)=>{const el=document.getElementById(id);if(el)el.textContent=`${percent}% — ${money(amount)}`};
+   176→  setText('selfFundingPreview',val('selfPercent'),f.self);
+   177→  setText('loanFundingPreview',val('loanPercent'),f.loan);
+   178→  setText('grantFundingPreview',val('grantPercent'),f.grant);
+   179→  syncAutoFundingToHiddenFields();
+   180→}
+   181→function syncAutoFundingToHiddenFields(){const f=getSmartFunding();const loan=autoLoanSettings();const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=Math.round(v)};set('selfFunding',f.self);set('grantAmount',f.grant);set('otherFunding',0);const hasLoan=document.getElementById('hasLoan');if(hasLoan)hasLoan.value=f.loan>0?'yes':'no';set('loanAmount',f.loan);const ir=document.getElementById('interestRate');if(ir)ir.value=loan.rate;const ly=document.getElementById('loanYears');if(ly)ly.value=loan.years;return true}
+   182→function generateAutoFundingPlan(){updateAutoFundingPreview()}
+   183→function applyAutoFundingPlan(){updateAutoFundingPreview();const f=getSmartFunding(),warn=document.getElementById('autoFundingWarning');if(f.totalPercent>100){if(warn){warn.classList.remove('hidden');warn.textContent=currentLang==='fr'?'🚨 Le total des pourcentages ne doit pas dépasser 100%.' :'🚨 مجموع النسب ما لازمش يفوت 100%.'}return}const loan=autoLoanSettings();document.getElementById('selfFunding').value=Math.round(f.self);document.getElementById('grantAmount').value=Math.round(f.grant);document.getElementById('otherFunding').value=0;document.getElementById('hasLoan').value=f.loan>0?'yes':'no';document.getElementById('loanAmount').value=Math.round(f.loan);document.getElementById('interestRate').value=loan.rate;document.getElementById('loanYears').value=loan.years;toggleLoan();calculateAll();if(warn){warn.classList.remove('hidden');warn.className='alert green';warn.textContent=currentLang==='fr'?'✅ Le plan a été appliqué aux champs de financement.':'✅ تم تطبيق الخطة على حقول التمويل.';setTimeout(()=>{warn.className='alert yellow hidden'},2200)}}function toggleLoan(){const show=txt('hasLoan')==='yes';const box=document.getElementById('loanBox');if(box)box.classList.toggle('hidden',!show);if(!show){['loanAmount','interestRate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=0});const ly=document.getElementById('loanYears');if(ly)ly.value=3;}}function getLoanAnnualPayment(){if(txt('hasLoan')!=='yes')return 0;const amount=val('loanAmount'),rate=val('interestRate')/100,years=Math.max(val('loanYears'),1);return rate>0?amount*(rate/(1-Math.pow(1+rate,-years))):amount/years}function getLoanMonthlyPayment(){return getLoanAnnualPayment()/12}function loanSchedule(){if(txt('hasLoan')!=='yes')return{rows:[]};const amount=val('loanAmount'),rate=val('interestRate')/100,years=Math.max(val('loanYears'),1),annual=getLoanAnnualPayment();let balance=amount,rows=[];for(let y=1;y<=years;y++){const interest=balance*rate,principal=annual-interest;balance=Math.max(0,balance-principal);rows.push({y,annual,interest,principal,balance})}return{rows}}
+   184→function getTaxInfo(annualRevenue,year){const type=txt('legal'),activity=txt('fiscalActivity'),hasLabel=txt('hasStartupLabel')==='yes',manualExempt=Math.max(0,val('exemptionYears'));if(manualExempt>0&&year<=manualExempt)return{rate:0,regime:'إعفاء ضريبي',reason:`السنة ${year} داخل مدة الإعفاء المدخلة`};if(type.includes('ناشئة')&&hasLabel&&year<=5)return{rate:0,regime:'إعفاء Startup Label',reason:'مؤسسة ناشئة بعلامة رسمية'};if(type.includes('براءة')&&hasLabel&&year<=5)return{rate:0,regime:'إعفاء مشروع مبتكر / براءة',reason:'مشروع مبتكر أو براءة مع Label'};if(annualRevenue<=IFU_THRESHOLD){let rate=.10,reason='نشاط مختلط أو غير محدد داخل سقف IFU';if(activity==='commercial'){rate=.05;reason='نشاط تجاري داخل سقف IFU'}else if(activity==='services'){rate=.12;reason='نشاط خدمات داخل سقف IFU'}else if(activity==='production'){rate=.05;reason='نشاط إنتاجي داخل سقف IFU'}return{rate,regime:'IFU',reason}}if(activity==='production')return{rate:.19,regime:'النظام الحقيقي IBS',reason:'نشاط إنتاجي / صناعي'};if(activity==='mixed')return{rate:.23,regime:'النظام الحقيقي IBS',reason:'نشاط مختلط فوق سقف IFU'};return{rate:.26,regime:'النظام الحقيقي IBS',reason:'نشاط خدمات أو نشاط غير إنتاجي فوق سقف IFU'}}function calculateTax(annualRevenue,resultBeforeTax,year){const info=getTaxInfo(annualRevenue,year),base=info.regime==='IFU'?annualRevenue:Math.max(0,resultBeforeTax);return{...info,amount:Math.max(0,base*info.rate)}}
+   185→
+   186→function estimateFirstSalesMonth(){
+   187→  const types=projectTypes();
+   188→  if(types.includes('صناعي')) return 3;
+   189→  if(types.includes('تجاري')) return 2;
+   190→  if(types.includes('رقمي')) return 2;
+   191→  if(types.includes('خدمي')) return 1;
+   192→  return 2;
+   193→}
+   194→function updateAutoFirstSalesMonth(){
+   195→  const month=estimateFirstSalesMonth();
+   196→  const hidden=document.getElementById('firstSalesMonth');
+   197→  if(hidden) hidden.value=month;
+   198→  return month;
+   199→}
+   200→
+   201→function buildOperationalCashRows(){updateAutoFirstSalesMonth();let rows=[],cumulative=0,first=Math.max(1,Math.min(12,val('firstSalesMonth'))),mg=val('monthlyGrowth')/100,loanM=getLoanMonthlyPayment(),fixed=fixedMonthly();for(let m=1;m<=12;m++){const active=m>=first,base=active?getProductMonthlyTotals(m-first+1,val('growthReal')/100):{rev:0,varCost:0},factor=active?Math.pow(1+mg,m-first):1,rev=active?base.rev*factor:0,varCost=active?base.varCost*factor:0,out=varCost+fixed+loanM,net=rev-out;cumulative+=net;rows.push({m,rev,varCost,fixed,loanM,out,net,cumulative})}return rows}
+   202→function buildCashflowRows(){const assets=assetTotals();let rows=[],cumulative=totalFunding()-assets.invest-val('preStartCosts'),op=buildOperationalCashRows();op.forEach(r=>{cumulative+=r.net;rows.push({...r,cumulative})});return rows}
+   203→function buildScfYear(y,growth){const t=getProductYearTotals(y,growth),fixedGrowth=val('fixedGrowth')/100,ext=externalServicesMonthly()*12*Math.pow(1+fixedGrowth,y-1),sal=val('salaries')*12*Math.pow(1+fixedGrowth,y-1),depr=assetTotals().dep,va=t.rev-t.varCost-ext,ebe=va-sal,opResult=ebe-depr,tax=calculateTax(t.rev,opResult,y),net=opResult-tax.amount;return{rev:t.rev,cogs:t.varCost,ext,va,sal,ebe,depr,opResult,tax,net}}
+   204→function money(n){return currentLang==='fr'?`${Math.round(Number(n||0)).toLocaleString('fr-DZ')} DA`:fmt(n)}
+   205→function drawChart(rev,cost,dep,tax,net){const c=document.getElementById('mainChart'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);const labels=currentLang==='fr'?['Revenus','Coûts décaissés','Amortissement','Impôt','Résultat net']:['الإيرادات','التكاليف النقدية','الاهتلاك','الضريبة','الصافي'];const data=[[labels[0],rev,'#2563eb'],[labels[1],cost,'#f59e0b'],[labels[2],dep,'#64748b'],[labels[3],tax,'#dc2626'],[labels[4],net,net>=0?'#16a34a':'#dc2626']],max=Math.max(...data.map(x=>Math.abs(x[1])),1),baseY=250;ctx.strokeStyle='#e5e7eb';ctx.fillStyle='#6b7280';ctx.font='12px Tahoma';ctx.textAlign='right';for(let i=0;i<=4;i++){let y=baseY-i*50;ctx.beginPath();ctx.moveTo(50,y);ctx.lineTo(970,y);ctx.stroke();ctx.fillText(fmt(max*i/4),45,y+4)}ctx.font='15px Tahoma';ctx.textAlign='center';data.forEach((d,i)=>{let x=90+i*180,h=Math.max(4,Math.abs(d[1])/max*200),y=baseY-h;ctx.fillStyle=d[2];ctx.fillRect(x,y,100,h);ctx.fillStyle='#111827';ctx.fillText(d[0],x+50,285);ctx.fillText(money(d[1]),x+50,y-8)})}
+   206→
+   207→function renderLearningLayer(data={}){
+   208→  const isFr=currentLang==='fr';
+   209→  const kpi=document.getElementById('kpiExplanations');
+   210→  if(kpi){
+   211→    kpi.innerHTML=isFr?`<h3>📊 Comprendre les indicateurs financiers</h3><div class="explain-grid"><div class="explain-item"><strong>💰 Chiffre d’affaires mensuel</strong><p>Somme des revenus mensuels générés par tous les produits et services.</p><p>S’il est faible : augmentez le volume, améliorez l’offre ou revoyez le prix.</p></div><div class="explain-item"><strong>📉 Résultat net mensuel</strong><p>Profit réel après coûts variables, charges fixes, amortissement et impôt estimé.</p><p>S’il est négatif, le projet doit être corrigé avant présentation.</p></div><div class="explain-item"><strong>🧾 Charges fixes</strong><p>Dépenses payées chaque mois même sans ventes : loyer, salaires, internet, administration.</p><p>Plus elles sont élevées, plus le seuil de rentabilité augmente.</p></div><div class="explain-item"><strong>⚖️ Seuil de rentabilité</strong><p>Niveau minimum de ventes nécessaire pour couvrir les coûts sans perte ni bénéfice.</p><p>Un seuil élevé signifie que le projet demande plus d’effort commercial.</p></div><div class="explain-item"><strong>🧠 Score du projet</strong><p>Lecture globale basée sur rentabilité, coûts, trésorerie et risque financier.</p><p>🟢 7+ bon | 🟡 4–7 à améliorer | 🔴 moins de 4 risqué.</p></div></div>`:`<h3>📊 شرح المؤشرات المالية</h3><div class="explain-grid"><div class="explain-item"><strong>💰 رقم الأعمال الشهري</strong><p>يمثل مجموع الإيرادات الشهرية من كل المنتجات والخدمات.</p><p>إذا كان ضعيفاً: زِد عدد العملاء، حسّن العرض، أو راجع السعر.</p></div><div class="explain-item"><strong>📉 الربح الصافي الشهري</strong><p>هو الربح الحقيقي بعد خصم التكاليف المتغيرة، التكاليف الثابتة، الاهتلاك والضريبة التقديرية.</p><p>إذا كان سالباً، فالمشروع يحتاج تعديل قبل عرضه.</p></div><div class="explain-item"><strong>🧾 التكاليف الثابتة</strong><p>مصاريف تُدفع كل شهر حتى بدون مبيعات: إيجار، أجور، إنترنت، إدارة.</p><p>كلما ارتفعت، ترتفع معها نقطة التعادل.</p></div><div class="explain-item"><strong>⚖️ نقطة التعادل</strong><p>الحد الأدنى من المبيعات اللازمة لتغطية التكاليف دون ربح أو خسارة.</p><p>إذا كانت مرتفعة، المشروع يحتاج مجهود بيع أكبر.</p></div><div class="explain-item"><strong>🧠 Score المشروع</strong><p>قراءة عامة مبنية على الربحية، التكاليف، الخزينة، والمخاطر المالية.</p><p>🟢 7+ جيد | 🟡 4–7 يحتاج تحسين | 🔴 أقل من 4 خطر.</p></div></div>`;
+   212→  }
+   213→  const texts=isFr?{
+   214→    mindset:'📌 Cet outil ne donne pas une décision finale automatique. Il aide l’étudiant à comprendre son projet, à vérifier la cohérence des chiffres et à améliorer ses décisions. La qualité du résultat dépend de l’exactitude des données saisies.',
+   215→    breakEven:'📌 Ce tableau explique le seuil de rentabilité étape par étape. Quand les charges augmentent ou que la marge diminue, le seuil devient plus difficile à atteindre.',
+   216→    scenario:'📌 Les scénarios montrent trois trajectoires possibles : optimiste, réaliste et pessimiste. Pour la décision, privilégiez le scénario réaliste et justifiez les hypothèses de croissance.',
+   217→    detailedRevenue:'📌 Ce tableau détaille les revenus du scénario réaliste sur cinq ans et vérifie si la croissance reste logique par rapport au marché ciblé.',
+   218→    asset:'📌 Les investissements montrent les moyens nécessaires au démarrage. L’amortissement répartit leur coût sur plusieurs années sans toucher directement la trésorerie.',
+   219→    financing:'📌 Ce tableau compare les besoins du projet avec les sources de financement. Tout écart doit être couvert avant le lancement.',
+   220→    loan:'📌 Le tableau de prêt montre la charge annuelle de remboursement. Un prêt améliore le financement mais augmente la pression sur la trésorerie.',
+   221→    cashflow:'📌 La trésorerie suit les entrées et sorties d’argent mois par mois. Un projet rentable peut échouer si la trésorerie devient négative trop tôt.',
+   222→    cashGap:'📌 L’analyse du déficit de trésorerie identifie le montant minimum à couvrir pour éviter l’arrêt du projet pendant les premiers mois.',
+   223→    tax:'📌 La simulation fiscale est pédagogique. Elle aide à estimer l’impôt selon l’activité et le chiffre d’affaires, mais doit être vérifiée par un enseignant ou un comptable.',
+   224→    scf:'📌 Le compte de résultat SCF présente une lecture comptable structurée : chiffre d’affaires, charges, valeur ajoutée, impôt et résultat net.',
+   225→    bmc:'📌 Le BMC relie le marché, la valeur proposée, les canaux, les ressources, les coûts et les revenus. Il doit rester cohérent avec les chiffres financiers.',
+   226→    bmcFinance:'📌 Ce tableau relie le BMC aux chiffres : revenus, coûts variables, charges fixes et amortissements. Il vérifie si le modèle économique est soutenable.'
+   227→  }:{
+   228→    mindset:'📌 هذه الأداة لا تعطي قراراً نهائياً جاهزاً. هي تساعد الطالب على فهم مشروعه، اختبار منطقية الأرقام، وتحسين قراراته. جودة النتيجة تعتمد على صحة المعطيات المدخلة.',
+   229→    breakEven:'📌 هذا الجدول يشرح نقطة التعادل خطوة بخطوة. عندما ترتفع التكاليف أو ينخفض الهامش، تصبح نقطة التعادل أصعب في التحقيق.',
+   230→    scenario:'📌 السيناريوهات تعرض ثلاث احتمالات لتطور المشروع: تفاؤلي، واقعي، وتشاؤمي. في اتخاذ القرار، اعتمد أكثر على السيناريو الواقعي وفسّر فرضيات النمو.',
+   231→    detailedRevenue:'📌 هذا الجدول يفصل إيرادات السيناريو الواقعي خلال خمس سنوات، ويساعدك على اختبار هل النمو منطقي مقارنة بالسوق المستهدف.',
+   232→    asset:'📌 الاستثمارات تبيّن الوسائل اللازمة للانطلاق. الاهتلاك يوزع تكلفة الاستثمار على عدة سنوات دون أن يكون خروجاً نقدياً مباشراً.',
+   233→    financing:'📌 هذا الجدول يقارن احتياجات المشروع بمصادر التمويل. أي فجوة تمويلية يجب تغطيتها قبل الانطلاق.',
+   234→    loan:'📌 جدول القرض يوضح عبء السداد السنوي. القرض يساعد في التمويل لكنه يزيد الضغط على الخزينة.',
+   235→    cashflow:'📌 الخزينة تتابع دخول وخروج الأموال شهرياً. قد يكون المشروع مربحاً محاسبياً لكنه يفشل إذا أصبحت الخزينة سالبة مبكراً.',
+   236→    cashGap:'📌 تحليل فجوة الخزينة يحدد المبلغ الأدنى الواجب تغطيته حتى لا يتوقف المشروع في الأشهر الأولى.',
+   237→    tax:'📌 المحاكاة الضريبية تعليمية. تساعدك على تقدير الضريبة حسب النشاط ورقم الأعمال، لكنها تحتاج مراجعة أستاذ أو محاسب.',
+   238→    scf:'📌 جدول حسابات النتائج SCF يعطي قراءة محاسبية منظمة: رقم الأعمال، الأعباء، القيمة المضافة، الضريبة، والنتيجة الصافية.',
+   239→    bmc:'📌 نموذج العمل BMC يربط السوق، القيمة المقترحة، القنوات، الموارد، التكاليف، والإيرادات. يجب أن يكون منسجماً مع الأرقام المالية.',
+   240→    bmcFinance:'📌 هذا الجدول يربط BMC بالأرقام: الإيرادات، التكاليف المتغيرة، التكاليف الثابتة، والاهتلاك. الهدف هو اختبار استدامة نموذج العمل.'
+   241→  };
+   242→  const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt};
+   243→  set('mindsetBox',texts.mindset);
+   244→  set('breakEvenExplain',texts.breakEven);set('scenarioExplain',texts.scenario);set('detailedRevenueExplain',texts.detailedRevenue);set('assetExplain',texts.asset);set('financingExplain',texts.financing);set('loanExplain',texts.loan);set('cashflowExplain',texts.cashflow);set('cashGapExplain',texts.cashGap);set('taxExplain',texts.tax);set('scfExplain',texts.scf);set('bmcExplain',texts.bmc);set('bmcFinanceExplain',texts.bmcFinance);
+   245→}
+   246→
+   247→function scoreCalc(base, netMonthly, breakEvenMonths, fixed, cashRows, yearNet){
+   248→  let score = 0;
+   249→  const revenue = Number(base?.rev || 0);
+   250→  const variable = Number(base?.varCost || 0);
+   251→  const marginRate = revenue > 0 ? (revenue - variable) / revenue : 0;
+   252→  const minCash = Array.isArray(cashRows) && cashRows.length ? Math.min(...cashRows.map(r => Number(r.cumulative || 0))) : 0;
+   253→
+   254→  if(revenue > 0) score += 1.5;
+   255→  if(netMonthly > 0) score += 2;
+   256→  else if(netMonthly === 0 && revenue > 0) score += 0.5;
+   257→
+   258→  if(marginRate >= 0.5) score += 2;
+   259→  else if(marginRate >= 0.3) score += 1.4;
+   260→  else if(marginRate >= 0.15) score += 0.8;
+   261→
+   262→  if(breakEvenMonths > 0 && breakEvenMonths <= 6) score += 1.5;
+   263→  else if(breakEvenMonths > 0 && breakEvenMonths <= 12) score += 1;
+   264→  else if(breakEvenMonths > 0 && breakEvenMonths <= 18) score += 0.5;
+   265→
+   266→  if(revenue > 0){
+   267→    const fixedRatio = fixed / revenue;
+   268→    if(fixedRatio <= 0.30) score += 1;
+   269→    else if(fixedRatio <= 0.50) score += 0.6;
+   270→    else if(fixedRatio <= 0.80) score += 0.3;
+   271→  }
+   272→
+   273→  if(minCash >= 0) score += 1;
+   274→  else if(revenue > 0 && Math.abs(minCash) <= revenue * 2) score += 0.5;
+   275→
+   276→  if(yearNet > 0) score += 1;
+   277→  else if(yearNet === 0 && revenue > 0) score += 0.3;
+   278→
+   279→  return Math.max(0, Math.min(10, score));
+   280→}
+   281→function renderWarnings(warnings){
+   282→  const box=document.getElementById('warnings');
+   283→  if(!box) return;
+   284→  if(!warnings || !warnings.length){
+   285→    box.innerHTML='';
+   286→    return;
+   287→  }
+   288→  box.innerHTML=warnings.map(w=>{
+   289→    const cls=Array.isArray(w)?w[0]:'yellow';
+   290→    const msg=Array.isArray(w)?w[1]:String(w);
+   291→    return `<div class="alert ${cls}">${msg}</div>`;
+   292→  }).join('');
+   293→}
+   294→
+   295→
+   296→function getSuggestedExemptionInfo(){
+   297→  const legal=txt('legal'), hasLabel=txt('hasStartupLabel')==='yes', activity=txt('fiscalActivity');
+   298→  const isFr=currentLang==='fr';
+   299→  let years=0, title=isFr?'Aucune exonération automatique claire':'لا يوجد إعفاء تلقائي واضح', reason=isFr?'Utilisez les informations juridiques disponibles ou les orientations de l’enseignant.':'استعمل المعطيات القانونية المتاحة أو توجيه الأستاذ.';
+   300→  if(legal.includes('ناشئة') && hasLabel){
+   301→    years=4;
+   302→    title=isFr?'Exonération Startup Label':'إعفاء Startup Label';
+   303→    reason=isFr?'Une startup disposant d’un Label peut bénéficier, à titre pédagogique, d’une exonération de 4 ans.':'المؤسسة الناشئة مع Label تستفيد مبدئياً من إعفاء لمدة 4 سنوات.';
+   304→  }
+   305→  else if(legal.includes('مصغرة')){
+   306→    years=5;
+   307→    title=isFr?'Exonération micro-entreprise ANADE — Souk Ahras':'إعفاء مؤسسة مصغرة ANADE — سوق أهراس';
+   308→    reason=isFr?'À Souk Ahras, l’outil retient pédagogiquement le plafond de 5 ans, sous réserve de validation administrative.':'في سوق أهراس يمكن اعتماد الحد الأعلى تعليمياً: 5 سنوات، مع ضرورة التأكد من الملف الإداري.';
+   309→  }
+   310→  else if(legal.includes('براءة')){
+   311→    years=5;
+   312→    title=isFr?'Brevet / projet innovant':'براءة اختراع / مشروع مبتكر';
+   313→    reason=isFr?'Le brevet renforce le dossier de Label et soutient la demande d’allègement, surtout dans une wilaya intérieure comme Souk Ahras.':'البراءة تقوي ملف الـ Label وتدعم طلب الإعفاء، خاصة في ولاية داخلية مثل سوق أهراس.';
+   314→  }
+   315→  else {
+   316→    years=10;
+   317→    title=isFr?'Exonération d’investissement AAPI — zone prioritaire':'إعفاء استثمار AAPI — منطقة ذات أولوية';
+   318→    reason=isFr?'Si le projet est éligible à l’investissement à Souk Ahras, un scénario d’exonération pouvant atteindre 10 ans peut être présenté en phase d’exploitation.':'إذا كان المشروع مؤهلاً ضمن الاستثمار في سوق أهراس، يمكن عرض سيناريو إعفاء يصل إلى 10 سنوات في مرحلة الاستغلال.';
+   319→  }
+   320→  let ibs=isFr?'26% commerce et services':'26% للتجارة والخدمات';
+   321→  if(activity==='production') ibs=isFr?'19% production':'19% للإنتاج';
+   322→  else if(activity==='mixed') ibs=isFr?'23% travaux / tourisme ou activité mixte':'23% للأشغال/السياحة أو النشاط المختلط';
+   323→  return {years,title,reason,ibs};
+   324→}
+   325→function suggestTaxExemption(){
+   326→  const b=document.getElementById('taxAdvisorBox'); if(!b)return;
+   327→  const s=getSuggestedExemptionInfo();
+   328→  const isFr=currentLang==='fr';
+   329→  b.innerHTML=isFr?
+   330→    `<strong>${s.title}</strong><div>Durée d’exonération proposée : <b>${s.years} ans</b></div><div>${s.reason}</div><div>Après la fin de l’exonération : IBS probable = <b>${s.ibs}</b>.</div><div style="margin-top:6px">⚠️ Remarque : il est recommandé de réinvestir 30% des bénéfices exonérés dans un délai de 4 ans selon le dossier et l’orientation juridique.</div>`:
+   331→    `<strong>${s.title}</strong><div>مدة الإعفاء المقترحة: <b>${s.years} سنوات</b></div><div>${s.reason}</div><div>بعد نهاية الإعفاء: IBS المحتمل = <b>${s.ibs}</b>.</div><div style="margin-top:6px">⚠️ ملاحظة: 30% من الأرباح المعفاة يُنصح بإعادة استثمارها خلال 4 سنوات حسب الملف والتوجيه القانوني.</div>`;
+   332→}
+   333→function applyTaxExemptionSuggestion(){
+   334→  const s=getSuggestedExemptionInfo();
+   335→  const el=document.getElementById('exemptionYears');
+   336→  if(el){el.value=s.years; calculateAll(); suggestTaxExemption();}
+   337→}
+   338→function renderAICoach(ctx){
+   339→  const box=document.getElementById('aiCoachBox'); if(!box)return;
+   340→  const isFr=currentLang==='fr';
+   341→  const {base,fixed,netMonthly,breakEvenMonths,cashRows,score,financingGap,year1}=ctx;
+   342→  const marginRate=base.rev>0?(base.rev-base.varCost)/base.rev:0;
+   343→  const minCash=Math.min(...cashRows.map(r=>r.cumulative),0);
+   344→  const budget=getStartupBudget();
+   345→  const funding=getSmartFunding();
+   346→  const loanShare=budget.total>0?(val('loanAmount')/budget.total):0;
+   347→  const firstNeg=cashRows.find(r=>r.cumulative<0);
+   348→  const s=getSuggestedExemptionInfo();
+   349→  const months=(OUT[currentLang]||OUT.ar).months;
+   350→
+   351→  let status=isFr?'Amélioration requise':'يحتاج تحسين';
+   352→  let color='🟡', decisionClass='yellow';
+   353→  let decision=isFr?'Ne lancez pas le projet avant d’ajuster les hypothèses principales.':'لا تطلق المشروع قبل تعديل الأرقام الأساسية.';
+   354→  if(base.rev<=0){
+   355→    status=isFr?'Non prêt':'غير جاهز'; color='🔴'; decisionClass='red';
+   356→    decision=isFr?'Commencez par saisir un produit/service avec un prix, un coût et une quantité claire.':'ابدأ بإدخال منتج/خدمة بسعر وكمية واضحة قبل تقييم المشروع.';
+   357→  }else if(score>=7 && netMonthly>0 && minCash>=0 && financingGap<=0){
+   358→    status=isFr?'Lançable à titre préliminaire':'قابل للانطلاق مبدئياً'; color='🟢'; decisionClass='green';
+   359→    decision=isFr?'Le projet peut être présenté. Concentrez-vous sur la preuve du marché et la justification des ventes.':'المشروع قابل للعرض مبدئياً. ركّز الآن على إثبات السوق وتبرير فرضيات المبيعات.';
+   360→  }else if(score<4 || netMonthly<0 || financingGap>0){
+   361→    status=isFr?'Non prêt financièrement':'غير جاهز مالياً'; color='🔴'; decisionClass='red';
+   362→    decision=isFr?'Il n’est pas recommandé de présenter le projet avec ces chiffres avant de corriger la rentabilité, le financement ou la trésorerie.':'لا يُنصح بعرض المشروع بهذه الأرقام قبل تصحيح الربحية أو التمويل أو الخزينة.';
+   363→  }
+   364→
+   365→  const reasons=[];
+   366→  if(base.rev<=0) reasons.push(isFr?'Aucun chiffre d’affaires mensuel clair.':'لا يوجد رقم أعمال شهري واضح.');
+   367→  if(netMonthly<0) reasons.push(isFr?`Résultat net mensuel négatif : ${money(netMonthly)}.`:`الربح الصافي الشهري سلبي: ${money(netMonthly)}.`);
+   368→  if(marginRate>0 && marginRate<0.25) reasons.push(isFr?`Marge brute faible : ${(marginRate*100).toFixed(1)}%.`:`الهامش الإجمالي ضعيف: ${(marginRate*100).toFixed(1)}%.`);
+   369→  if(base.rev>0 && fixed>base.rev*0.5) reasons.push(isFr?`Les charges fixes sont élevées : ${((fixed/base.rev)*100).toFixed(0)}% du chiffre d’affaires.`:`التكاليف الثابتة مرتفعة وتمثل ${((fixed/base.rev)*100).toFixed(0)}% من رقم الأعمال.`);
+   370→  if(breakEvenMonths>10) reasons.push(isFr?`Seuil de rentabilité éloigné : ${breakEvenMonths.toFixed(1)} mois.`:`نقطة التعادل بعيدة: ${breakEvenMonths.toFixed(1)} شهر.`);
+   371→  if(minCash<0) reasons.push(isFr?`La trésorerie atteint un déficit maximal de ${money(minCash)}${firstNeg?` à partir de ${months[firstNeg.m-1]}`:''}.`:`الخزينة تدخل في عجز أقصى قدره ${money(minCash)}${firstNeg?` ابتداءً من ${months[firstNeg.m-1]}`:''}.`);
+   372→  if(financingGap>0) reasons.push(isFr?`Écart de financement non couvert : ${money(financingGap)}.`:`فجوة التمويل غير مغطاة: ${money(financingGap)}.`);
+   373→  if(loanShare>0.6) reasons.push(isFr?`Dépendance élevée au prêt : ${(loanShare*100).toFixed(0)}% du budget de lancement.`:`الاعتماد على القرض مرتفع: ${(loanShare*100).toFixed(0)}% من ميزانية الانطلاق.`);
+   374→  if(!reasons.length) reasons.push(isFr?'Aucun signal de risque majeur dans les chiffres actuels ; les hypothèses de marché doivent quand même être justifiées.':'لا توجد إشارات خطر كبيرة في الأرقام الحالية، لكن يجب تبرير فرضيات السوق والمبيعات.');
+   375→
+   376→  const actions=[];
+   377→  if(base.rev<=0) actions.push(isFr?'Saisissez au moins un produit/service avec prix, coût et quantité mensuelle.':'أدخل منتج/خدمة واحد على الأقل مع سعر، تكلفة، وكمية شهرية.');
+   378→  if(netMonthly<0){
+   379→    const gap=Math.abs(netMonthly);
+   380→    const neededRevenue=marginRate>0?gap/marginRate:gap;
+   381→    actions.push(isFr?`Corrigez la rentabilité : il faut environ ${money(neededRevenue)} de chiffre d’affaires mensuel en plus ou ${money(gap)} de charges mensuelles en moins.`:`صحّح الربحية: تحتاج تقريباً ${money(neededRevenue)} زيادة في رقم الأعمال الشهري أو ${money(gap)} تخفيض في التكاليف الشهرية.`);
+   382→  }
+   383→  if(marginRate<0.25 && base.rev>0) actions.push(isFr?'Améliorez la marge : augmentez le prix, réduisez le coût variable ou changez le modèle de revenus.':'ارفع الهامش: زِد السعر، خفّض التكلفة المتغيرة، أو بدّل نموذج الإيراد.');
+   384→  if(fixed>base.rev*0.5 && base.rev>0) actions.push(isFr?'Réduisez les charges fixes : loyer plus faible, salaires progressifs ou démarrage en MVP.':'خفّض التكاليف الثابتة: إيجار أقل، أجور تدريجية، أو انطلاق بنسخة أصغر MVP.');
+   385→  if(breakEvenMonths>10) actions.push(isFr?'Réduisez le seuil de rentabilité en baissant les charges fixes, en améliorant la marge ou en augmentant les ventes.':'قلّل نقطة التعادل عبر تقليل التكاليف الثابتة أو رفع الهامش أو زيادة المبيعات المتوقعة.');
+   386→  if(minCash<0) actions.push(isFr?`Prévoir un fonds de roulement d’au moins ${money(Math.abs(minCash))} pour couvrir les premiers mois.`:`وفّر رأس مال عامل لا يقل عن ${money(Math.abs(minCash))} لتغطية الأشهر الأولى.`);
+   387→  if(financingGap>0) actions.push(isFr?'Couvrez l’écart de financement : augmentez l’aide/l’apport, réduisez l’investissement ou activez le prêt.':'غطِّ فجوة التمويل: زِد الدعم/المساهمة، خفّض الاستثمار، أو فعّل القرض في الخطة.');
+   388→  if(loanShare>0.6) actions.push(isFr?'Réduisez la pression du prêt : augmentez l’aide ou l’apport personnel car le service de la dette peut peser sur la trésorerie.':'خفّض ضغط القرض: ارفع الدعم أو المساهمة الشخصية لأن خدمة الدين قد تضغط على الخزينة.');
+   389→  if(!actions.length) actions.push(isFr?'Conservez la structure actuelle et préparez des preuves de marché : entretiens, précommandes ou devis réels.':'حافظ على التوزيع الحالي، وجهّز أدلة السوق: مقابلات، طلبات مسبقة، أو عروض أسعار حقيقية.');
+   390→
+   391→  const fundingAdvice=[];
+   392→  fundingAdvice.push(isFr?`Budget de lancement estimé : ${money(budget.total)}.`:`ميزانية الانطلاق المقدرة: ${money(budget.total)}.`);
+   393→  fundingAdvice.push(isFr?`Fonds de roulement requis : ${money(budget.workingCapital)}.`:`رأس المال العامل المطلوب: ${money(budget.workingCapital)}.`);
+   394→  if(funding.totalPercent>100) fundingAdvice.push(isFr?'Corrigez les pourcentages de financement : le total dépasse 100%.':'صحّح نسب طريقة التمويل لأن مجموعها يتجاوز 100%.');
+   395→  else if(funding.totalPercent<100) fundingAdvice.push(isFr?`La structure actuelle couvre seulement ${funding.totalPercent}% du besoin : apport ${val('selfPercent')}%, prêt ${val('loanPercent')}%, aide ${val('grantPercent')}%. La différence apparaît comme un écart de financement.`:`توزيع التمويل الحالي يغطي ${funding.totalPercent}% فقط من الاحتياج: شخصي ${val('selfPercent')}%، قرض ${val('loanPercent')}%، دعم ${val('grantPercent')}%. الفرق سيظهر كفجوة تمويلية.`);
+   396→  else fundingAdvice.push(isFr?`Structure actuelle : apport ${val('selfPercent')}%, prêt ${val('loanPercent')}%, aide ${val('grantPercent')}%.`:`توزيع التمويل الحالي: شخصي ${val('selfPercent')}%، قرض ${val('loanPercent')}%، دعم ${val('grantPercent')}%.`);
+   397→  if(val('loanAmount')>0) fundingAdvice.push(isFr?`Prêt actuel : ${money(val('loanAmount'))} sur ${val('loanYears')} ans avec un taux de ${val('interestRate')}%.`:`القرض الحالي: ${money(val('loanAmount'))} لمدة ${val('loanYears')} سنوات بفائدة ${val('interestRate')}%.`);
+   398→
+   399→  const committee=isFr?[
+   400→    'Comment avez-vous justifié le chiffre d’affaires ? Reliez prix × quantité × clients ciblés.',
+
+[showing lines 1-400 of 586; use offset=401 with limit to continue reading]
